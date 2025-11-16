@@ -19,10 +19,9 @@ import Error from './components/Error';
 import AdminRoute from './components/AdminRoute';
 import LoginRoute from './components/LoginRoute';
 import UserProfilePage from './components/UserProfile';
-
-// --- FIX: Added missing import ---
+import { Toaster } from "react-hot-toast";
 import Careers from './components/Careers';
-// --- End Fix ---
+
 
 import Home from './components/Home';
 import Privacy from './components/Privacy'; // Make sure this is also imported correctly

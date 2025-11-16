@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-// No more axios needed here
+
 import PostCard from "./PostCard";
 import PostModal from "./PostModal";
 import Loader from "./Loader";
