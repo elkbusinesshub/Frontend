@@ -2,7 +2,7 @@ import { jwtDecode } from 'jwt-decode';
 import React, { useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { setUser } from './store/slices/authSlice';
+import { setUser, clearUser } from './store/slices/authSlice';
 import axios from 'axios';
 import LoginPage from './components/LoginPage';
 import Tabs from './components/Tabs';
@@ -19,13 +19,16 @@ import Error from './components/Error';
 import AdminRoute from './components/AdminRoute';
 import LoginRoute from './components/LoginRoute';
 import UserProfilePage from './components/UserProfile';
+import { Toaster } from "react-hot-toast";
 import Careers from './components/Careers';
+
+
 import Home from './components/Home';
-import Privacy from './components/Privacy';
+import Privacy from './components/Privacy'; // Make sure this is also imported correctly
 import Terms from './components/Terms';
 import SearchResult from './components/SearchResult';
-import Header from './components/Header';
-import AppHeader from './components/AppHeader';
+import Header from './components/Header';           // Landing page header
+import AppHeader from './components/AppHeader';     // Main application header
 import cleaning from './assets/ic_cleaning_service.png';
 import repairing from './assets/ic_repairing_service.png';
 import painting from './assets/ic_painting_service.png';
@@ -45,7 +48,7 @@ import helicopter from './assets/home_cate_helicopter.png';
 
 function App() {
     const dispatch = useDispatch();
-    const location = useLocation();
+    const location = useLocation(); // Get the current location object
 
     const serviceCategories = [
         { id: 1, title: 'Cleaning', image: cleaning  },
@@ -69,11 +72,26 @@ function App() {
     ];
 
     useEffect(() => {
-        const token = localStorage.getItem('elk_authorization_token');        
+        const token = localStorage.getItem('elk_authorization_token');
         if (token && token.split('.').length === 3) {
             const fetchUserData = async () => {
                 try {
-                    const { id: userId } = jwtDecode(token);
+                    let userId;
+                    try {
+                        const decoded = jwtDecode(token);
+                        userId = decoded.id; // Assuming the user ID is stored in the 'id' claim
+                    } catch (decodeError) {
+                        console.error('Invalid token:', decodeError);
+                        localStorage.removeItem('elk_authorization_token');
+                        dispatch(clearUser()); // Use the imported clearUser action
+                        return;
+                    }
+
+                    if (!userId) {
+                        console.error('User ID not found in token');
+                        return;
+                    }
+
                     const response = await axios.post(
                         `${process.env.REACT_APP_API_BASE_URL}/api/get_user?id=${userId}`,
                         {},
@@ -85,20 +103,35 @@ function App() {
                     dispatch(setUser({ user: userData, token, isAdmin: userData.is_admin }));
                 } catch (error) {
                     console.error('Failed to fetch user profile:', error);
+                    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+                         localStorage.removeItem('elk_authorization_token');
+                         dispatch(clearUser()); // Use the imported clearUser action
+                    }
                 }
             };
             fetchUserData();
         }
-    }, [dispatch]); 
+    }, [dispatch]);
 
-    // Determine which global header to show based on the current path
-    const showAppHeader = ![ '/', '/careers', '/privacy', '/terms'].includes(location.pathname);
+    // --- Updated Conditional Header Logic ---
+    const { pathname } = location;
+    
+    // Define paths where *no* header should be shown
+    const noHeaderPaths = ['/login', '/terms'];
+    
+    // Define paths for the simple landing page header (Header.jsx)
+    const isLandingPageSection = ['/', '/careers', '/privacy'].includes(pathname);
+    
+    // Determine if the main application header (AppHeader.jsx) should be shown
+    const showAppHeader = !noHeaderPaths.includes(pathname) && !isLandingPageSection;
+    // --- End Updated Logic ---
 
     return (
         <>
-            {/* Render the appropriate global header */}
-            {showAppHeader ? <AppHeader /> : <Header />}
-            
+            {/* Render the appropriate header based on the current route */}
+            {noHeaderPaths.includes(pathname) ? null : (isLandingPageSection ? <Header /> : <AppHeader />)}
+
+            {/* Apply main-content class ONLY when AppHeader is shown */}
             <main className={showAppHeader ? "main-content" : ""}>
                 <Routes>
                     {/* Public Routes */}
@@ -106,19 +139,19 @@ function App() {
                     <Route path="/careers" element={<Careers />} />
                     <Route path="/privacy" element={<Privacy />} />
                     <Route path="/terms" element={<Terms />} />
-                    
+
                     {/* App Routes */}
                     <Route path="/home" element={<Tabs />} />
                     <Route path="/login" element={<LoginRoute><LoginPage /></LoginRoute>} />
                     <Route path="/search/:query" element={<SearchResult/>}/>
-                    
+
                     {/* Protected App Routes */}
                     <Route path="/post-ad" element={<ProtectedRoute><PostAdForm /></ProtectedRoute>} />
                     <Route path="/chat" element={<ProtectedRoute><ChatScreen/></ProtectedRoute>}/>
                     <Route path="/mywishlist" element={<ProtectedRoute><MyWishList/></ProtectedRoute>}/>
                     <Route path='/profile' element={<ProtectedRoute><ProfilePage/></ProtectedRoute>}/>
                     <Route path='/user-profile/:id' element={<ProtectedRoute><UserProfilePage/></ProtectedRoute>}/>
-                    
+
                     {/* Dynamic Category Routes */}
                     {serviceCategories.map((category) => (
                         <Route
@@ -139,7 +172,7 @@ function App() {
                     <Route path="/admin" element={<AdminRoute><AdminHome /></AdminRoute>} />
                     <Route path='/admin/notification' element={<AdminRoute><AdminNotificationForm/></AdminRoute>}/>
                     <Route path="/admin/accounts" element={<AdminRoute><AdminAllUsers /></AdminRoute>} />
-                    
+
                     {/* Fallback Route */}
                     <Route path="*" element={<Error/>}/>
                 </Routes>

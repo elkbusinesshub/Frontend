@@ -9,6 +9,7 @@
   justify-content: center;
   align-items: center;
   z-index: 1055;
+  overflow: hidden;
 }
 
 .fullscreen-image-container {
@@ -22,44 +23,31 @@
 .fullscreen-image {
   max-width: 90vw;
   max-height: 90vh;
-  background-color: white; /* Ensures transparent images have a background */
+  background-color: white; /* For transparent images */
   object-fit: contain;
+  border-radius: 8px;
 }
 
+/* Navigation Buttons — only icon visible */
 .nav-button {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background-color: rgba(0, 0, 0, 0.4); /* Darker semi-transparent background */
-  border: none; /* Remove border */
+  background: none; /* remove round background */
+  border: none;
   color: white;
-  font-size: 2.5rem; /* Adjust size if needed */
-  font-weight: bold;
   cursor: pointer;
-  padding: 10px 15px; /* Adjust padding for button size */
-  border-radius: 50%;
-  line-height: 1;
   z-index: 1056;
-  transition: background-color 0.2s ease-in-out;
-  -webkit-user-select: none; /* Safari */
-  -ms-user-select: none; /* IE 10+ */
-  user-select: none; /* Standard */
+  transition: transform 0.2s ease, opacity 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 0.8;
 }
 
 .nav-button:hover {
-    background-color: rgba(0, 0, 0, 0.6); /* Slightly darker on hover */
-}
-
-/* Use Unicode arrows for a cleaner look */
-.prev-button::before {
-  content: '‹';
-}
-
-.next-button::before {
-  content: '›';
+  opacity: 1;
+  transform: translateY(-50%) scale(1.1);
 }
 
 .prev-button {
@@ -68,4 +56,24 @@
 
 .next-button {
   right: 20px;
+}
+
+/* Close Button (keep subtle circle for clarity) */
+.close-button {
+  position: absolute;
+  top: 20px;
+  right: 25px;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 6px;
+  z-index: 1057;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  opacity: 0.8;
+}
+
+.close-button:hover {
+  opacity: 1;
+  transform: scale(1.1);
 }

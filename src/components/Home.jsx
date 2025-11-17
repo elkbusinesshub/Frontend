@@ -23,7 +23,8 @@ import layer2 from '../images/layer2.png';
 import './Home.css';
 import astronaut from '../images/astronaut.jpg';
 import Article from "./Article";
-import Footer from "./Footer";
+
+import Footer from "./AppFooter"; 
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 

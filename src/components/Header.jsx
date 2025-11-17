@@ -1,33 +1,28 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
-import { Link, useLocation } from "react-router-dom"; // Import useLocation
+import { Link, useLocation } from "react-router-dom";
+import logonewGif from "../images/logonew.gif.gif"; // [cite: uploaded:logonew.gif.gif-1e6158f0-7758-4f5c-a254-7840c22988fc]
+import logonewJpg from "../images/logonew.jpg";     // [cite: uploaded:src/images/logonew.jpg]
 
-import logonew from "../images/logonew.mp4"; // Ensure this path is correct
 
 import Container from "react-bootstrap/Container";
 import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
 
 function Header() {
-  const location = useLocation(); // Get the current location
+  const location = useLocation(); 
   const logoRef = useRef(null);
   const isInView = useInView(logoRef, { once: false });
 
   const [scrolled, setScrolled] = useState(false);
   const [visible, setVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [navExpanded, setNavExpanded] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
-
-      if (window.scrollY > lastScrollY) {
-        // Scrolling down
-        setVisible(false);
-      } else {
-        // Scrolling up
-        setVisible(true);
-      }
+      setVisible(window.scrollY < lastScrollY || window.scrollY < 50);
       setLastScrollY(window.scrollY);
     };
 
@@ -35,70 +30,114 @@ function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
-  // Check if the current page is /careers or /privacy
-  const showNavLinks = !['/careers', '/privacy'].includes(location.pathname);
+  
+  const { pathname } = location;
+  let logoSrc;
+  let logoStyle;
+
+  if (pathname === '/') {
+    
+    logoSrc = logonewGif;
+    logoStyle = {
+      width: scrolled ? "350px" : "400px",
+      height: scrolled ? "80px" : "90px", // Adjusted height for GIF
+    };
+  } else {
+    
+    logoSrc = logonewJpg;
+    logoStyle = {
+      width: scrolled ? "250px" : "300px",
+      height: scrolled ? "80px" : "90px",
+    };
+  }
+  
+
+  // This logic now correctly *hides* links on careers/privacy
+  const hideNavLinksCompletely = ['/careers', '/privacy', '/terms'].includes(pathname);
+
+  const handleNavClick = () => {
+    setNavExpanded(false);
+  };
+
+
+ const handleInternalLinkClick = (hash, e) => {
+    setNavExpanded(false);
+    if (location.pathname === '/') {
+      e.preventDefault();
+      setTimeout(() => {
+        const element = document.getElementById(hash.substring(1));
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 0);
+    }
+ };
+
 
   return (
     <Navbar
       expand="lg"
       sticky="top"
       className={`shadow-sm bg-white mb-0 transition-navbar ${scrolled ? "navbar-scrolled" : ""} ${visible ? "navbar-visible" : "navbar-hidden"}`}
+      expanded={navExpanded}
+      onToggle={setNavExpanded}
     >
       <Container className="pt-2">
         <Navbar.Brand as={Link} to="/" className="d-flex flex-column align-items-center" style={{ marginLeft: '-30px' }}>
-           <motion.video
+           <motion.img
             ref={logoRef}
             initial={{ y: -100, opacity: 0 }}
             animate={isInView ? { y: 0, opacity: 1 } : {}}
             transition={{ type: "spring", stiffness: 120, damping: 10 }}
-            src={logonew}
+            
+            src={logoSrc}
             alt="logo header"
-            autoPlay
-            loop
-            muted
             style={{
-              width: scrolled ? "250px" : "300px",
-              height: scrolled ? "80px" : "90px",
+              ...logoStyle, 
               border: "none",
               transition: "all 0.3s ease",
               pointerEvents: "none",
             }}
+            
           />
         </Navbar.Brand>
 
-        {/* --- Start of Changes --- */}
-        {/* Only show the toggle and nav links if showNavLinks is true */}
-        {showNavLinks && <Navbar.Toggle aria-controls="navbar-nav" />}
         
-        {showNavLinks && (
+        {!hideNavLinksCompletely && (
+          <>
+            <Navbar.Toggle aria-controls="navbar-nav" />
             <Navbar.Collapse id="navbar-nav" style={{ zIndex: "1000" }}>
-            <Nav className="ms-auto">
-                <Nav.Link href="#home" className="ms-5">Home</Nav.Link>
-                <Nav.Link href="#aboutus" className="ms-5">About Us</Nav.Link>
-                <Nav.Link href="#elk" className="ms-5 fw-bold">ELK Platform</Nav.Link>
-                <Nav.Link href="#blog" className="ms-5">Blog</Nav.Link>
+              <Nav className="ms-auto">
+                <Nav.Link href="#home" className="ms-5" onClick={(e) => handleInternalLinkClick('#home', e)}>Home</Nav.Link>
+                <Nav.Link href="#aboutus" className="ms-5" onClick={(e) => handleInternalLinkClick('#aboutus', e)}>About Us</Nav.Link>
+                <Nav.Link href="#elk" className="ms-5 fw-bold" onClick={(e) => handleInternalLinkClick('#elk', e)}>ELK Platform</Nav.Link>
+                <Nav.Link href="#blog" className="ms-5" onClick={(e) => handleInternalLinkClick('#blog', e)}>Blog</Nav.Link>
+                
+                {/* --- FIX: Added "Contacts" text back --- */}
                 <Nav.Link
                     as={Link}
                     to="/privacy"
                     className="ms-5"
                     onClick={() => {
+                        handleNavClick();
                         setTimeout(() => {
-                        const element = document.getElementById("contactsinprivacy");
-                        if (element) {
-                            element.scrollIntoView({ behavior: "smooth" });
-                        }
+                            const element = document.getElementById("contactsinprivacy");
+                            if (element) {
+                                element.scrollIntoView({ behavior: "smooth" });
+                            }
                         }, 0);
                     }}
                 >
-                Contacts
+                  Contacts 
                 </Nav.Link>
-                <Nav.Link as={Link} to="/careers" className="ms-5">Careers</Nav.Link>
-                <Nav.Link as={Link} to="/login" className="ms-5 fw-bold">Sign Up</Nav.Link>
-            </Nav>
-            </Navbar.Collapse>
-        )}
-        {/* --- End of Changes --- */}
+                {/* --- End Fix --- */}
 
+                <Nav.Link as={Link} to="/careers" className="ms-5" onClick={handleNavClick}>Careers</Nav.Link>
+                <Nav.Link as={Link} to="/login" className="ms-5 fw-bold" onClick={handleNavClick}>Sign Up</Nav.Link>
+              </Nav>
+            </Navbar.Collapse>
+          </>
+        )}
       </Container>
     </Navbar>
   );

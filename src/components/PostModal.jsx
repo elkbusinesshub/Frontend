@@ -6,8 +6,6 @@ import axios from 'axios';
 import Loader from './Loader';
 import ChatIcon from '@mui/icons-material/Chat';
 import ShareIcon from '@mui/icons-material/Share';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import dayjs from 'dayjs';
 import FullscreenImageView from './FullscreenImageView';
 import './PostModal.css';
@@ -18,7 +16,6 @@ const PostModal = ({ show, onHide, post, isMyAd, onDeleteAd }) => {
   const navigate = useNavigate();
   const [adDetails, setAdDetails] = useState(null);
   const [loading, setLoading] = useState(false);
-  const token = localStorage.getItem('elk_authorization_token');
   const [error, setError] = useState(false);
   const [fullscreenState, setFullscreenState] = useState({
     isOpen: false,
@@ -26,9 +23,12 @@ const PostModal = ({ show, onHide, post, isMyAd, onDeleteAd }) => {
     startIndex: 0,
   });
 
+  const token = localStorage.getItem('elk_authorization_token');
+
+  // --- SHARE HANDLER ---
   const handleShare = () => {
-    const shareUrl = `https://elkcompany.in/ad/${adDetails.id}`;
-    if (navigator.share) {
+    const shareUrl = `${window.location.origin}/ad/${adDetails?.id}`;
+    if (navigator.share && adDetails) {
       navigator
         .share({
           title: adDetails.title,
@@ -36,258 +36,247 @@ const PostModal = ({ show, onHide, post, isMyAd, onDeleteAd }) => {
           url: shareUrl,
         })
         .catch(err => console.error('Share failed:', err));
-    } else {
-      navigator.clipboard
-        .writeText(shareUrl)
+    } else if (adDetails) {
+      navigator.clipboard.writeText(shareUrl)
         .then(() => alert('Ad link copied to clipboard!'))
         .catch(err => console.error('Failed to copy:', err));
     }
   };
 
+  // --- FULLSCREEN HANDLER ---
   const openFullscreen = (images, startIndex) => {
+    handleClose(); // close modal before opening fullscreen
     setFullscreenState({
       isOpen: true,
       images: images.map(img => img.image),
       startIndex,
     });
-    onHide(); // Close the modal
   };
 
-  const getAdDetails = async (adId, token) => {
-    let body = {};
-    if (token) {
-      const userId = user?.user_id;
-      body = { ad_id: adId, user_id: userId };
-    } else {
-      body = { ad_id: adId };
-    }
-    try {
-      setLoading(true);
-      setError(false);
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_BASE_URL}/api/get_ad_details`,
-        body,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      setLoading(false);
-      return response.data;
-    } catch (error) {
-      setLoading(false);
-      setError(true);
-      console.error('Failed to fetch ad details:', error.response?.data || error.message);
-      return null;
-    }
-  };
-
+  // --- FETCH AD DETAILS ---
   useEffect(() => {
-    if (!post?.ad_id) return;
-    const fetchAd = async () => {
+    const getAdDetails = async (adId) => {
+      if (!adId) return;
+      const body = { ad_id: adId, user_id: user?.user_id || null };
       try {
-        const data = await getAdDetails(post.ad_id, token);
-        if (data) setAdDetails(data);
-      } catch (err) {
-        // Handle error
+        setLoading(true);
+        setError(false);
+        const response = await axios.post(
+          `${process.env.REACT_APP_API_BASE_URL}/api/get_ad_details`,
+          body,
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            'Content-Type': 'application/json',
+          }
+        );
+        setAdDetails(response.data);
+      } catch (error) {
+        console.error('Failed to fetch ad details:', error.response?.data || error.message);
+        setError(true);
+        setAdDetails(null);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchAd();
-  }, [post?.ad_id, token]);
 
-  const toggleWishlist = async () => {
-    if (!adDetails || !token) return;
-
-    const url = adDetails.wishListed
-      ? `${process.env.REACT_APP_API_BASE_URL}/api/remove_wishlist`
-      : `${process.env.REACT_APP_API_BASE_URL}/api/add_to_wishlist`;
-
-    try {
-      await axios.post(
-        url,
-        { ad_id: adDetails.id },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      alert('Wishlist updated');
-      setAdDetails(prev => ({
-        ...prev,
-        wishListed: !prev.wishListed,
-      }));
-    } catch (error) {
-      console.error('Wishlist update error:', error.response?.data || error.message);
+    if (show && post?.ad_id) getAdDetails(post.ad_id);
+    else if (!show) {
+      setAdDetails(null);
+      setError(false);
     }
+  }, [post?.ad_id, token, user?.user_id, show]);
+
+  const handleClose = () => {
+    setAdDetails(null);
+    setError(false);
+    setFullscreenState({ isOpen: false, images: [], startIndex: 0 });
+    onHide();
   };
 
-  if (loading) return <Loader />;
-  if (error) {
+  // --- CONDITIONAL RENDER STATES ---
+  if (loading && show) {
     return (
-      <Modal show={show} onHide={onHide} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Error</Modal.Title>
-        </Modal.Header>
+      <Modal show={show} onHide={handleClose} centered>
+        <Modal.Body><Loader /></Modal.Body>
+      </Modal>
+    );
+  }
+
+  if (error && show) {
+    return (
+      <Modal show={show} onHide={handleClose} centered>
+        <Modal.Header closeButton><Modal.Title>Error</Modal.Title></Modal.Header>
         <Modal.Body>Failed to load ad details. Please try again later.</Modal.Body>
       </Modal>
     );
   }
-  if (!adDetails) return null;
 
-  const postDateTime = dayjs(adDetails.createdAt).format('MMM D, YYYY [at] h:mm A');
+  if (!adDetails && show) return null;
+
+  // --- DATA PROCESSING ---
+  const postDateTime = adDetails
+    ? dayjs(adDetails.createdAt).format('MMM D, YYYY [at] h:mm A')
+    : '';
+  const locationString = adDetails
+    ? [
+        adDetails.ad_location?.locality,
+        adDetails.ad_location?.place,
+        adDetails.ad_location?.district,
+        adDetails.ad_location?.state,
+        adDetails.ad_location?.country,
+      ]
+        .filter(Boolean)
+        .join(', ')
+    : '';
 
   return (
     <>
-      <Modal show={show} onHide={onHide} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>{adDetails.title}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {adDetails.ad_images && adDetails.ad_images.length > 0 && (
-            <Carousel>
-              {adDetails.ad_images.map((image, index) => (
-                <Carousel.Item key={index} onClick={() => openFullscreen(adDetails.ad_images, index)}>
-                  <img
-                    src={image.image}
-                    alt={`Slide ${index + 1}`}
-                    className="d-block w-100 img-fluid rounded"
-                    style={{ maxHeight: '250px', objectFit: 'cover', cursor: 'pointer' }}
-                  />
-                </Carousel.Item>
-              ))}
-            </Carousel>
-          )}
-          <div className="mt-3">
-            <p className="text-muted fs-6" style={{ fontFamily: 'Arial, sans-serif' }}>
-              Post ID: {adDetails.id}
-            </p>
-            <p className="text-muted small">Posted on {postDateTime}</p>
-            <p>
-              <strong>Category:</strong> {adDetails.category}
-            </p>
-            <p>
-              <strong>Description:</strong> {adDetails.description}
-            </p>
-            <p>
-              <strong>Price:</strong> {adDetails.ad_price_details[0]?.rent_price || 'N/A'} per{' '}
-              {adDetails.ad_price_details[0]?.rent_duration || ''}
-            </p>
-            <p>
-              <i className="fa-solid fa-location-dot"></i>{' '}
-              {`${adDetails.ad_location.locality ? adDetails.ad_location.locality + ',' : ''} ${
-                adDetails.ad_location.district
-              }, ${adDetails.ad_location.state}, ${adDetails.ad_location.country}`}
-            </p>
-          </div>
-          <div className="d-flex flex-row justify-content-between align-items-center mt-4 flex-wrap">
-            {!isMyAd && (
-              <button
-                style={{
-                  border: 'none',
-                  backgroundColor: 'transparent',
-                  padding: '0',
-                  cursor: 'pointer',
-                }}
-                onClick={() => {
-                  if (!isAuthenticated) {
-                    navigate('/login');
-                  } else {
-                    toggleWishlist();
-                  }
-                }}
-              >
-                {adDetails.wishListed ? (
-                  <FavoriteIcon fontSize="large" sx={{ color: '#4FBBB4', margin: '0 20px', cursor: 'pointer' }} />
+      {!fullscreenState.isOpen && (
+        <Modal show={show} onHide={handleClose} centered size="lg">
+          {adDetails && (
+            <>
+              <Modal.Header closeButton>
+                <Modal.Title>{adDetails.title}</Modal.Title>
+              </Modal.Header>
+              <Modal.Body>
+                {/* IMAGE CAROUSEL */}
+                {adDetails.ad_images && adDetails.ad_images.length > 0 ? (
+                  <Carousel
+                    interval={null}
+                    controls={adDetails.ad_images.length > 1}
+                    style={{ maxHeight: '400px', overflow: 'hidden' }}
+                  >
+                    {adDetails.ad_images.map((image, index) => (
+                      <Carousel.Item
+                        key={index}
+                        onClick={() => openFullscreen(adDetails.ad_images, index)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <img
+                          src={image.image}
+                          alt={`Slide ${index + 1}`}
+                          className="d-block w-100 img-fluid rounded"
+                          style={{
+                            maxHeight: '400px',
+                            objectFit: 'contain',
+                          }}
+                        />
+                      </Carousel.Item>
+                    ))}
+                  </Carousel>
                 ) : (
-                  <FavoriteBorderIcon
-                    fontSize="large"
-                    sx={{ color: '#4FBBB4', margin: '0 20px', cursor: 'pointer' }}
-                  />
-                )}
-              </button>
-            )}
-            
-            <div className="d-flex align-items-center gap-3">
-                <ShareIcon onClick={() => handleShare()} fontSize="large" sx={{ color: '#4FBBB4', cursor: 'pointer' }} />
-                
-                {isMyAd && (
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => onDeleteAd(adDetails.ad_id)}
+                  <div
+                    className="d-flex align-items-center justify-content-center text-muted"
                     style={{
-                        borderRadius: '50%',
-                        width: '40px',
-                        height: '40px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: 0
+                      height: '200px',
+                      backgroundColor: '#f8f9fa',
+                      borderRadius: '8px',
                     }}
                   >
-                    <MdDeleteForever size={25} />
-                  </Button>
+                    No Image Available
+                  </div>
                 )}
-            </div>
 
-            {isAuthenticated && !isMyAd && (
-              <ChatIcon
-                onClick={() =>
-                  navigate('/chat', {
-                    state: {
-                      userId: adDetails.user_id,
-                      userName: adDetails.user.name,
-                      adId: adDetails.id,
-                      adName: adDetails.title,
-                    },
-                  })
-                }
-                fontSize="large"
-                sx={{ color: '#4FBBB4', margin: '0 20px', cursor: 'pointer' }}
-              />
-            )}
-            
-            {isAuthenticated ? (
-              <Button
-                style={{
-                  borderRadius: '12px',
-                  backgroundColor: '#4FBBB4',
-                  borderColor: '#4FBBB4',
-                  padding: '4px 12px',
-                  fontSize: '0.8rem',
-                  lineHeight: 1.2,
-                }}
-                onClick={() => navigate(`/user-profile/${adDetails.user_id}`)}
-              >
-                View Profile
-              </Button>
-            ) : (
-              <Button
-                style={{
-                  borderRadius: '12px',
-                  backgroundColor: '#4FBBB4',
-                  borderColor: '#4FBBB4',
-                  padding: '4px 12px',
-                  fontSize: '0.8rem',
-                  lineHeight: 1.2,
-                }}
-                onClick={() => navigate('/login')}
-              >
-                View Profile
-              </Button>
-            )}
-          </div>
-        </Modal.Body>
-      </Modal>
+                {/* AD DETAILS */}
+                <div className="mt-3">
+                  <p className="text-muted small">Post ID: {adDetails.id}</p>
+                  <p className="text-muted small">Posted on {postDateTime}</p>
+                  <p><strong>Category:</strong> {adDetails.category}</p>
+                  <p><strong>Description:</strong> {adDetails.description}</p>
+                  <strong>Price:</strong>{' '}
+                  {adDetails.ad_price_details?.length > 0 ? (
+                    adDetails.ad_price_details.map((price, index) => (
+                      <span key={index} className="d-block ms-2">
+                        ₹{price.rent_price ?? 'N/A'} per {price.rent_duration || 'unit'}
+                      </span>
+                    ))
+                  ) : (
+                    <span> N/A</span>
+                  )}
+                  <p className="mt-2">
+                    <i className="fa-solid fa-location-dot me-1"></i>
+                    {locationString || 'Location not specified'}
+                  </p>
+                </div>
+
+                {/* ACTION BUTTONS */}
+                <div className="d-flex justify-content-between align-items-center mt-4 pt-3 border-top flex-wrap gap-2">
+                  {/* LEFT: Share + Delete */}
+                  <div className="d-flex align-items-center gap-3">
+                    <ShareIcon
+                      onClick={handleShare}
+                      fontSize="large"
+                      sx={{ color: '#4FBBB4', cursor: 'pointer' }}
+                    />
+                    {isAuthenticated && isMyAd && onDeleteAd && (
+                      <MdDeleteForever
+                        size={35}
+                        color="red"
+                        onClick={() => onDeleteAd(adDetails.id)}
+                        style={{
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s ease',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.2)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+                        title="Delete Ad"
+                      />
+                    )}
+                  </div>
+
+                  {/* RIGHT: Chat + View Profile */}
+                  <div className="d-flex align-items-center gap-3">
+                    {isAuthenticated && !isMyAd && adDetails.user_id !== user?.user_id && (
+                      <ChatIcon
+                        onClick={() =>
+                          navigate('/chat', {
+                            state: {
+                              userId: adDetails.user_id,
+                              userName: adDetails.user?.name || 'User',
+                              adId: adDetails.id,
+                              adName: adDetails.title,
+                            },
+                          })
+                        }
+                        fontSize="large"
+                        sx={{ color: '#4FBBB4', cursor: 'pointer' }}
+                      />
+                    )}
+
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      style={{
+                        backgroundColor: '#4FBBB4',
+                        borderColor: '#4FBBB4',
+                      }}
+                      onClick={() => {
+                        if (isAuthenticated && adDetails.user_id) {
+                          navigate(`/user-profile/${adDetails.user_id}`);
+                          handleClose();
+                        } else {
+                          navigate('/login');
+                        }
+                      }}
+                    >
+                      View Profile
+                    </Button>
+                  </div>
+                </div>
+              </Modal.Body>
+            </>
+          )}
+        </Modal>
+      )}
+
+      {/* FULLSCREEN VIEWER */}
       {fullscreenState.isOpen && (
         <FullscreenImageView
           images={fullscreenState.images}
           startIndex={fullscreenState.startIndex}
-          onClose={() => setFullscreenState({ isOpen: false, images: [], startIndex: 0 })}
+          onClose={() =>
+            setFullscreenState({ isOpen: false, images: [], startIndex: 0 })
+          }
         />
       )}
     </>

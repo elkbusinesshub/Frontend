@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const MAPBOX_TOKEN = 'YOUR_MAPBOX_ACCESS_TOKEN';
+// FIX: Using environment variable instead of hardcoded key
+const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN;
 
 const LocationSearch = ({ onSelect }) => {
   const [query, setQuery] = useState('');

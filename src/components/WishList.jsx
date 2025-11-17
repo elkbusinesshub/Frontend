@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import AppHeader from "./AppHeader";
 import Footer from "./AppFooter";
 import axios from "axios";
+// import { useCookies } from "react-cookie";
 import PostCard from "./PostCard";
 import PostModal from "./PostModal";
 import Loader from "./Loader";
 import { useSelector } from 'react-redux';
 import EmptyState from "./EmptyAd";
 import NotLoggedIn from "./NotLoggedIn";
-
 const MyWishList = () => {
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -58,13 +59,16 @@ const MyWishList = () => {
         ) : (
           <div className="row">
             {wishlist.map((ad) => (
-              <PostCard key={ad.id} post={ad} onClick={handleCardClick} isMyAd={true}/>
+              // --- FIX: Changed isMyAd from true to false ---
+              <PostCard key={ad.id} post={ad} onClick={handleCardClick} isMyAd={false}/> 
+              // --- End Fix ---
             ))}
           </div>
         )}
       </div>
       <Footer />
-      <PostModal isMyAd={false} show={showModal} onHide={() => setShowModal(false)} post={selectedPost} />
+      {/* Passing isMyAd={false} to PostModal ensures delete isn't shown there either */}
+      <PostModal isMyAd={false} show={showModal} onHide={() => setShowModal(false)} post={selectedPost} /> 
     </>
   );
 };

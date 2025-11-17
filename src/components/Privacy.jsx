@@ -1,12 +1,12 @@
 import React from 'react'
 import Footer from './Footer'
 
-
 function Privacy() {
     return (
-        <div >
-        <div style={{background:'linear-gradient(180deg, #F5CC40 0%, #4FBBB4 100%)'}} id ='contacts'>
-        <div style={{ margin: '0 auto', maxWidth: '800px', padding: '20px', fontFamily: 'Arial, sans-serif', lineHeight: '1.6' ,background: 'linear-gradient(180deg, #F5CC40 0%, #4FBBB4 100%)',}}>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        <div style={{background:'linear-gradient(180deg, #F5CC40 0%, #4FBBB4 100%)', flexGrow: 1}} id ='contacts'>
+        <div style={{ margin: '0 auto', maxWidth: '800px', padding: '20px', fontFamily: 'Arial, sans-serif', lineHeight: '1.6'}}>
       <h1 style={{ textAlign: 'center',color:'white' }}>Privacy Policy for ELK</h1>
 
       <section style={{color:'white'}}>
@@ -117,12 +117,9 @@ function Privacy() {
     </div>
 <Footer/>
         
-        </div>
+        </div> 
     )
 
 }
-
-
-
 
 export default Privacy

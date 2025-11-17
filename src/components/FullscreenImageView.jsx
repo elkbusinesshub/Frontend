@@ -1,65 +1,100 @@
-import React, { useState, useEffect } from 'react';
-import './PostModal.css';
+import React, { useState, useEffect } from "react";
+import { MdClose, MdNavigateNext, MdNavigateBefore } from "react-icons/md";
+import "./PostModal.css"; // Using the CSS you provided
 
 const FullscreenImageView = ({ images, startIndex, onClose }) => {
   const [currentIndex, setCurrentIndex] = useState(startIndex);
 
-  // Function to go to the next image
-  const handleNext = (e) => {
-    e.stopPropagation(); // Prevents the overlay from closing
-    setCurrentIndex(prevIndex => (prevIndex + 1) % images.length);
-  };
-
-  // Function to go to the previous image
-  const handlePrev = (e) => {
-    e.stopPropagation(); // Prevents the overlay from closing
-    setCurrentIndex(prevIndex => (prevIndex - 1 + images.length) % images.length);
-  };
-
-  // Effect to handle keyboard navigation (left/right arrows)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (images.length > 1) { // Only allow arrow navigation if there's more than one image
-        if (e.key === 'ArrowRight') {
-          handleNext(e);
-        } else if (e.key === 'ArrowLeft') {
-          handlePrev(e);
-        }
+      
+      if (images.length > 1) {
+        if (e.key === "ArrowRight") goToNext();
+        else if (e.key === "ArrowLeft") goToPrevious();
       }
-      if (e.key === 'Escape') {
-        onClose();
-      }
+      
+      if (e.key === "Escape") onClose();
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [images, currentIndex]); // Rerun effect if images or index change
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [currentIndex, images.length, onClose]); 
+
+  const goToPrevious = () => {
+    
+    const newIndex = currentIndex === 0 ? images.length - 1 : currentIndex - 1;
+    setCurrentIndex(newIndex);
+  };
+
+  const goToNext = () => {
+    // This function is only called if images.length > 1
+    const newIndex = currentIndex === images.length - 1 ? 0 : currentIndex + 1;
+    setCurrentIndex(newIndex);
+  };
+
+  if (!Array.isArray(images) || images.length === 0) {
+    console.error("FullscreenImageView: Invalid or empty images array provided.");
+    onClose();
+    return null;
+  }
 
   return (
     <div className="fullscreen-image-view" onClick={onClose}>
+      {/* Close Button (Always visible) */}
+      <button
+        className="close-button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        aria-label="Close"
+      >
+        <MdClose size={28} />
+      </button>
+
+      {/* --- FIX: Conditionally Render Prev/Next Buttons --- */}
       {images.length > 1 && (
-        <button className="nav-button prev-button" onClick={handlePrev}>
-          &lt;
-        </button>
+        <>
+          {/* Previous Button */}
+          <button
+            className="nav-button prev-button"
+            onClick={(e) => {
+              e.stopPropagation();
+              goToPrevious();
+            }}
+            aria-label="Previous"
+          >
+            <MdNavigateBefore size={40} />
+          </button>
+
+          {/* Next Button */}
+          <button
+            className="nav-button next-button"
+            onClick={(e) => {
+              e.stopPropagation();
+              goToNext();
+            }}
+            aria-label="Next"
+          >
+            <MdNavigateNext size={40} />
+          </button>
+        </>
       )}
-      
-      {/* Image container */}
-      <div className="fullscreen-image-container">
+      {/* --- End Fix --- */}
+
+
+      {/* Image (Always visible) */}
+      <div
+        className="fullscreen-image-container"
+        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking image
+      >
         <img
           src={images[currentIndex]}
-          alt="Fullscreen"
+          alt={`Fullscreen ${currentIndex + 1}`}
           className="fullscreen-image"
-          onClick={(e) => e.stopPropagation()} // Prevent closing when image is clicked
         />
       </div>
 
-      {images.length > 1 && (
-        <button className="nav-button next-button" onClick={handleNext}>
-          &gt;
-        </button>
-      )}
     </div>
   );
 };

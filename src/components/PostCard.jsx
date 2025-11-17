@@ -1,77 +1,125 @@
 import { Carousel } from 'react-bootstrap';
 import dayjs from 'dayjs';
-import { MdDeleteForever } from "react-icons/md"; 
+import { MdDeleteForever } from "react-icons/md";
 
 const PostCard = ({ post, onClick, isMyAd, onDeleteAd }) => {
-  const postDateTime = dayjs(post.createdAt).format('MMM D, YYYY [at] h:mm A');
+  // Safely extract post data
+  const createdAt = post?.createdAt;
+  const adImages = post?.ad_images || [];
+  const adPriceDetails = post?.ad_price_details?.[0];
+  const adLocation = post?.ad_location;
+  const postTitle = post?.title || 'Untitled Ad';
 
+  // Format date
+  const postDateTime = createdAt
+    ? dayjs(createdAt).format('MMM D, YYYY [at] h:mm A')
+    : 'Date not available';
+
+  // Handle delete
   const handleDelete = (e) => {
-    e.stopPropagation(); // Prevent opening the modal
-    onDeleteAd(post.ad_id);
+    e.stopPropagation(); // prevent modal trigger
+    if (onDeleteAd && post?.ad_id) {
+      onDeleteAd(post.ad_id);
+    } else {
+      console.error("onDeleteAd function or post.ad_id is missing");
+    }
   };
 
   return (
-    <div className={isMyAd ? "col-6 col-sm-6 col-md-4 col-lg-3 mb-4 d-flex justify-content-center" : ""}>
-      <div className="card shadow-sm" style={{ borderRadius: '10px', maxWidth: '250px', position: 'relative' }}>
-        {isMyAd && (
-          <button
-            onClick={handleDelete}
-            style={{
-              position: 'absolute',
-              top: '5px',
-              left: '5px',
-              zIndex: '10',
-              background: 'rgba(255, 255, 255, 0.7)',
-              border: 'none',
-              borderRadius: '50%',
-              width: '30px',
-              height: '30px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer'
-            }}
-          >
-            <MdDeleteForever color="blue" size={20} />
-          </button>
-        )}
-        {post.ad_images && post.ad_images.length > 0 ? (
-          <Carousel 
-            interval={null} 
-            indicators={false} 
-            controls={post.ad_images.length > 1} // This line hides controls for single images
-          >
-            {post.ad_images.map((imgObj, index) => (
-              <Carousel.Item key={index}>
-                <img
-                  src={imgObj.image}
-                  alt={`${post.title} - ${index + 1}`}
-                  className="d-block w-100"
-                  style={{ objectFit: 'cover', width: '100%', borderRadius: '10px 10px 0 0', height: '150px', cursor: 'pointer' }}
-                  onClick={() => onClick(post)}
-                />
-              </Carousel.Item>
-            ))}
-          </Carousel>
-        ) : (
-          <div 
-            style={{ height: '150px', backgroundColor: '#f8f9fa', cursor: 'pointer', borderRadius: '10px 10px 0 0' }} 
-            onClick={() => onClick(post)} 
-            className="d-flex align-items-center justify-content-center text-muted"
-          >
-            No Image
-          </div>
-        )}
-        <div className="card-body p-2 d-flex flex-column" style={{ cursor: 'pointer' }} onClick={() => onClick(post)}>
-          <h6 className="card-title post-title">{post.title}</h6>
-          <div className="d-flex flex-column text-truncate" style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-            <span className="card-text me-2">₹{post.ad_price_details[0]?.rent_price || 'N/A'} per {post.ad_price_details[0]?.rent_duration || ''}</span>
-            <span className="card-text text-truncate">
-              <i className="fa-solid fa-location-dot me-1"></i>
-              {`${post.ad_location.locality ? post.ad_location.locality + ',' : ''} ${post.ad_location.place ? post.ad_location.place + ',' : ''} ${post.ad_location.district ? post.ad_location.district + ',' : ''} ${post.ad_location.state ? post.ad_location.state + ',' : ''} ${post.ad_location.country ? post.ad_location.country : ''}`}
-            </span>
-            <span className="card-text text-muted small mt-1">{postDateTime}</span>
-          </div>
+    <div
+      className="card shadow-sm"
+      style={{
+        borderRadius: '10px',
+        width: '250px',
+        maxWidth: '250px',
+        position: 'relative',
+        marginBottom: '1rem',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Red delete icon (no background, no border) */}
+      {isMyAd && onDeleteAd && (
+        <MdDeleteForever
+          onClick={handleDelete}
+          size={26}
+          color="red"
+          style={{
+            position: 'absolute',
+            top: '8px',
+            left: '8px',
+            cursor: 'pointer',
+            zIndex: 10,
+            transition: 'transform 0.2s ease',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.2)')}
+          onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+          title="Delete Ad"
+        />
+      )}
+
+      {/* Carousel Section */}
+      {adImages.length > 0 ? (
+        <Carousel
+          interval={null}
+          indicators={false}
+          controls={adImages.length > 1}
+        >
+          {adImages.map((imgObj, index) => (
+            <Carousel.Item key={index}>
+              <img
+                src={imgObj?.image}
+                alt={`${postTitle} - ${index + 1}`}
+                className="d-block w-100"
+                style={{
+                  objectFit: 'cover',
+                  width: '100%',
+                  height: '150px',
+                  cursor: 'pointer',
+                }}
+                onClick={() => onClick(post)}
+              />
+            </Carousel.Item>
+          ))}
+        </Carousel>
+      ) : (
+        <div
+          style={{
+            height: '150px',
+            backgroundColor: '#e9ecef',
+            cursor: 'pointer',
+          }}
+          onClick={() => onClick(post)}
+          className="d-flex align-items-center justify-content-center text-muted small"
+        >
+          No Image
+        </div>
+      )}
+
+      {/* Card Body */}
+      <div
+        className="card-body p-2 d-flex flex-column"
+        style={{ cursor: 'pointer' }}
+        onClick={() => onClick(post)}
+      >
+        <h6 className="card-title post-title mb-1">{postTitle}</h6>
+        <div className="d-flex flex-column" style={{ fontSize: '0.8rem' }}>
+          <span className="card-text text-truncate mb-1">
+            ₹{adPriceDetails?.rent_price ?? 'N/A'} per{' '}
+            {adPriceDetails?.rent_duration || 'unit'}
+          </span>
+          <span className="card-text text-truncate mb-1">
+            <i className="fa-solid fa-location-dot me-1"></i>
+            {[
+              adLocation?.locality,
+              adLocation?.place,
+              adLocation?.district,
+            ]
+              .filter(Boolean)
+              .join(', ') || 'Location unspecified'}
+          </span>
+          <span className="card-text text-muted small mt-auto">
+            {postDateTime}
+          </span>
         </div>
       </div>
     </div>
