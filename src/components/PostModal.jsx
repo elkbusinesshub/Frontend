@@ -6,6 +6,8 @@ import axios from 'axios';
 import Loader from './Loader';
 import ChatIcon from '@mui/icons-material/Chat';
 import ShareIcon from '@mui/icons-material/Share';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'; // Added Import
+import FavoriteIcon from '@mui/icons-material/Favorite'; // Added Import
 import dayjs from 'dayjs';
 import FullscreenImageView from './FullscreenImageView';
 import './PostModal.css';
@@ -22,6 +24,9 @@ const PostModal = ({ show, onHide, post, isMyAd, onDeleteAd }) => {
     images: [],
     startIndex: 0,
   });
+  
+  // Added State for Wishlist
+  const [isWishlisted, setIsWishlisted] = useState(false);
 
   const token = localStorage.getItem('elk_authorization_token');
 
@@ -70,6 +75,8 @@ const PostModal = ({ show, onHide, post, isMyAd, onDeleteAd }) => {
           }
         );
         setAdDetails(response.data);
+        // You can add logic here to check if 'response.data' indicates the item is already wishlisted
+        // setIsWishlisted(response.data.is_wishlisted || false); 
       } catch (error) {
         console.error('Failed to fetch ad details:', error.response?.data || error.message);
         setError(true);
@@ -83,6 +90,7 @@ const PostModal = ({ show, onHide, post, isMyAd, onDeleteAd }) => {
     else if (!show) {
       setAdDetails(null);
       setError(false);
+      setIsWishlisted(false); // Reset wishlist state on close
     }
   }, [post?.ad_id, token, user?.user_id, show]);
 
@@ -201,13 +209,23 @@ const PostModal = ({ show, onHide, post, isMyAd, onDeleteAd }) => {
 
                 {/* ACTION BUTTONS */}
                 <div className="d-flex justify-content-between align-items-center mt-4 pt-3 border-top flex-wrap gap-2">
-                  {/* LEFT: Share + Delete */}
+                  {/* LEFT: Share + Wishlist + Delete */}
                   <div className="d-flex align-items-center gap-3">
                     <ShareIcon
                       onClick={handleShare}
                       fontSize="large"
                       sx={{ color: '#4FBBB4', cursor: 'pointer' }}
                     />
+
+                    {/* WISHLIST ICON ADDED HERE */}
+                    <div onClick={() => setIsWishlisted(!isWishlisted)} style={{ cursor: 'pointer' }}>
+                      {isWishlisted ? (
+                        <FavoriteIcon fontSize="large" sx={{ color: 'red' }} />
+                      ) : (
+                        <FavoriteBorderIcon fontSize="large" sx={{ color: '#4FBBB4' }} />
+                      )}
+                    </div>
+
                     {isAuthenticated && isMyAd && onDeleteAd && (
                       <MdDeleteForever
                         size={35}
