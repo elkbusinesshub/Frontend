@@ -1,7 +1,11 @@
 :root {
-  --site-header-height: 96px; /* adjust if your header is taller/shorter */
+  --site-header-height: 70px; /* reduce this to match actual header height */
 }
 
+.site-header-placeholder {
+  height: var(--site-header-height);
+  width: 100%;
+}
 .site-header {
   position: fixed;
   top: 0;
@@ -10,24 +14,28 @@
   width: 100%;
   z-index: 1100;
   background: #ffffff;
+  
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  min-height: unset;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
 }
 
 .site-header .container {
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
 }
 
 .site-header img {
   display: block;
-  max-height: 80px;
   height: auto;
+  mix-blend-mode: multiply;
+  background: transparent !important;
 }
 
-/* Spacer to prevent page content from being hidden under the fixed header.
-   This keeps the change local to the header component (we add the spacer
-   element next to the header in `Header.jsx`). */
-.site-header-placeholder {
-  height: var(--site-header-height);
-  width: 100%;
-}
+
+/* Remove white box around GIF logo */
+/* .navbar-brand img {
+  mix-blend-mode: multiply;
+  background: transparent !important;
+} */

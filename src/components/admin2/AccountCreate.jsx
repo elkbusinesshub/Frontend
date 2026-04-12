@@ -3,35 +3,16 @@ import { Formik, Form, Field, FieldArray, ErrorMessage } from 'formik'
 import * as Yup from 'yup'
 import { IoCloseCircleOutline } from 'react-icons/io5'
 import { Button } from 'react-bootstrap'
-import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import './create.css'
 import Sidebar from './SideBar'
-import { useGetPlaceMutation } from '../../store/services/place.service'
+import { useGetPlaceSearchQuery, useGetPlaceMutation } from '../../store/services/place.service'
 import { useCreateAdMutation } from '../../store/services/admin.service'
 import { successMessageToast } from '../common/hooks/common'
 
 const categories = {
-  rent: [
-    'Cars',
-    'Properties',
-    'Electronics',
-    'Furnitures',
-    'Bikes',
-    'Clothes',
-    'Tools',
-    'Others',
-  ],
-  service: [
-    'Cleaning',
-    'Repairing',
-    'Plumbing',
-    'Electrician',
-    'Carpentry',
-    'Laundry',
-    'Saloon',
-    'Others',
-  ],
+  rent: ['Cars', 'Properties', 'Electronics', 'Furnitures', 'Bikes', 'Clothes', 'Tools', 'Others'],
+  service: ['Cleaning', 'Repairing', 'Plumbing', 'Electrician', 'Carpentry', 'Laundry', 'Saloon', 'Others'],
 }
 
 const validationSchema = Yup.object({
@@ -71,28 +52,46 @@ const validationSchema = Yup.object({
 export default function AccountCreateMobile() {
   const navigate = useNavigate()
   const [locationLoading, setLocationLoading] = useState(false)
-  const [getPlace, { isLoading: getPlaceLoading }] = useGetPlaceMutation()
-  const [createAd, { isLoading: createAdLoading }] = useCreateAdMutation()
+  const [query, setQuery] = useState('')
+  const [showLocationSearch, setShowLocationSearch] = useState(false)
+
+  const [getPlace] = useGetPlaceMutation()
+  const [createAd] = useCreateAdMutation()
+
+  const { data: locations = [] } = useGetPlaceSearchQuery(
+    { query, limited: false },
+    { skip: !query }
+  )
 
   const initialValues = {
     name: '',
     phone: '',
-    location: { place: '' },
+    location: { place: '', latitude: '', longitude: '' },
     ads: [],
+  }
+
+  const handleLocationChange = (e) => {
+    setQuery(e.target.value)
+    setShowLocationSearch(true)
+  }
+
+  const handleSelectLocation = (loc, setFieldValue) => {
+    setFieldValue('location', loc)
+    setQuery(loc.name)
+    setShowLocationSearch(false)
   }
 
   const handleUseCurrentLocation = (setFieldValue) => {
     setLocationLoading(true)
+    setShowLocationSearch(false)  // ✅ close dropdown
+    setQuery('') 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
           const { latitude, longitude } = position.coords
-          // const res = await axios.post(
-          //   `${process.env.REACT_APP_API_BASE_URL}/api/get_place`,
-          //   { latitude, longitude },
-          // );
           const res = await getPlace({ latitude, longitude })
-          setFieldValue('location.place', res.data?.place)
+          setFieldValue('location', res.data)
+          setQuery(res.data?.place || '')   // show in input box too
         } catch (err) {
           alert('Location fetch failed')
         } finally {
@@ -117,7 +116,6 @@ export default function AccountCreateMobile() {
         ad.images?.forEach((file) => {
           formData.append(`ads[${adIndex}][images]`, file)
         })
-
         return {
           type: ad.type,
           category: ad.category,
@@ -129,17 +127,9 @@ export default function AccountCreateMobile() {
 
       formData.append('ads', JSON.stringify(adsPayload))
 
-      // const res = await axios.post(
-      //   `${process.env.REACT_APP_API_BASE_URL}/api/admin-ad-create`,
-      //   formData,
-      //   {
-      //     headers: token ? { Authorization: `Bearer ${token}` } : {},
-      //   },
-      // )
       const res = await createAd(formData)
-      console.log("res..",res)
       if (res?.data?.success) {
-        successMessageToast(res.message ?? 'Submitted successfully')
+        successMessageToast(res.data.message ?? 'Submitted successfully')
         navigate('/sales')
       }
     } catch (err) {
@@ -154,7 +144,7 @@ export default function AccountCreateMobile() {
       <Sidebar />
       <br />
       <div className="mobile-container">
-        <div className="header">Create Accountt</div>
+        <div className="header">Create Account</div>
 
         <Formik
           initialValues={initialValues}
@@ -163,7 +153,6 @@ export default function AccountCreateMobile() {
         >
           {({ values, setFieldValue, isSubmitting }) => (
             <>
-              {/* FULL SCREEN LOADER */}
               {isSubmitting && (
                 <div className="fullscreen-loader">
                   <div className="loader-box">
@@ -177,33 +166,21 @@ export default function AccountCreateMobile() {
                 <div className="card-box">
                   <h5>Profile Details</h5>
 
-                  <Field
-                    name="name"
-                    placeholder="Name"
-                    className="styled-input"
-                  />
-                  <ErrorMessage
-                    name="name"
-                    component="div"
-                    className="error-text"
-                  />
+                  <Field name="name" placeholder="Name" className="styled-input" />
+                  <ErrorMessage name="name" component="div" className="error-text" />
 
-                  <Field
-                    name="phone"
-                    placeholder="Phone"
-                    className="styled-input"
-                  />
-                  <ErrorMessage
-                    name="phone"
-                    component="div"
-                    className="error-text"
-                  />
+                  <Field name="phone" placeholder="Phone" className="styled-input" />
+                  <ErrorMessage name="phone" component="div" className="error-text" />
+
+                  {/* LOCATION - Type manually OR use current location */}
                   <div className="location-row">
-                    <Field
-                      name="location.place"
-                      placeholder="Location"
+                    <input
+                      type="text"
+                      placeholder="Search Location"
+                      value={query}
+                      onFocus={() => setShowLocationSearch(true)}
+                      onChange={handleLocationChange}
                       className="styled-input"
-                      readOnly
                     />
                     <Button
                       type="button"
@@ -213,11 +190,20 @@ export default function AccountCreateMobile() {
                       {locationLoading ? '...' : '📍'}
                     </Button>
                   </div>
-                  <ErrorMessage
-                    name="location.place"
-                    component="div"
-                    className="error-text"
-                  />
+
+                  {showLocationSearch && locations.length > 0 && (
+                    <ul className="location-suggestions">
+                      {locations.map((loc, i) => (
+                        <li
+                          key={i}
+                          onClick={() => handleSelectLocation(loc, setFieldValue)}
+                        >
+                          <strong>{loc.name}</strong>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <ErrorMessage name="location.place" component="div" className="error-text" />
                 </div>
 
                 {/* ADS */}
@@ -228,50 +214,24 @@ export default function AccountCreateMobile() {
                         <div key={adIndex} className="card-box">
                           <div className="card-header-row">
                             <h6>Ad {adIndex + 1}</h6>
-                            <IoCloseCircleOutline
-                              size={22}
-                              color="red"
-                              onClick={() => remove(adIndex)}
-                            />
+                            <IoCloseCircleOutline size={22} color="red" onClick={() => remove(adIndex)} />
                           </div>
 
-                          <Field
-                            as="select"
-                            name={`ads.${adIndex}.type`}
-                            className="styled-input"
-                          >
+                          <Field as="select" name={`ads.${adIndex}.type`} className="styled-input">
                             <option value="">Select Type</option>
                             <option value="rent">Rent</option>
                             <option value="service">Service</option>
                           </Field>
 
-                          <Field
-                            as="select"
-                            name={`ads.${adIndex}.category`}
-                            className="styled-input"
-                          >
+                          <Field as="select" name={`ads.${adIndex}.category`} className="styled-input">
                             <option value="">Select Category</option>
-                            {categories[values.ads?.[adIndex]?.type]?.map(
-                              (c) => (
-                                <option key={c} value={c}>
-                                  {c}
-                                </option>
-                              ),
-                            )}
+                            {categories[values.ads?.[adIndex]?.type]?.map((c) => (
+                              <option key={c} value={c}>{c}</option>
+                            ))}
                           </Field>
 
-                          <Field
-                            name={`ads.${adIndex}.title`}
-                            placeholder="Title"
-                            className="styled-input"
-                          />
-
-                          <Field
-                            as="textarea"
-                            name={`ads.${adIndex}.description`}
-                            placeholder="Description"
-                            className="styled-input"
-                          />
+                          <Field name={`ads.${adIndex}.title`} placeholder="Title" className="styled-input" />
+                          <Field as="textarea" name={`ads.${adIndex}.description`} placeholder="Description" className="styled-input" />
 
                           {/* PRICE */}
                           <FieldArray name={`ads.${adIndex}.prices`}>
@@ -279,56 +239,26 @@ export default function AccountCreateMobile() {
                               <>
                                 {ad.prices?.map((price, priceIndex) => (
                                   <div key={priceIndex} className="price-box">
-                                    {/* CATEGORY SELECT */}
-                                    <Field
-                                      as="select"
-                                      name={`ads.${adIndex}.prices.${priceIndex}.category`}
-                                      className="styled-input"
-                                    >
+                                    <Field as="select" name={`ads.${adIndex}.prices.${priceIndex}.category`} className="styled-input">
                                       <option value="">Category</option>
                                       <option value="duration">Duration</option>
                                       <option value="size">Size</option>
                                       <option value="custom">Custom</option>
                                     </Field>
+                                    <ErrorMessage name={`ads.${adIndex}.prices.${priceIndex}.category`} component="div" className="error-text" />
 
-                                    <ErrorMessage
-                                      name={`ads.${adIndex}.prices.${priceIndex}.category`}
-                                      component="div"
-                                      className="error-text"
-                                    />
-
-                                    {/* UNIT FIELD BASED ON CATEGORY */}
-                                    {values.ads[adIndex].prices[priceIndex]
-                                      .category === 'custom' && (
-                                      <Field
-                                        name={`ads.${adIndex}.prices.${priceIndex}.unit`}
-                                        placeholder="Custom Unit"
-                                        className="styled-input"
-                                      />
+                                    {values.ads[adIndex].prices[priceIndex].category === 'custom' && (
+                                      <Field name={`ads.${adIndex}.prices.${priceIndex}.unit`} placeholder="Custom Unit" className="styled-input" />
                                     )}
-
-                                    {values.ads[adIndex].prices[priceIndex]
-                                      .category === 'size' && (
-                                      <Field
-                                        as="select"
-                                        name={`ads.${adIndex}.prices.${priceIndex}.unit`}
-                                        className="styled-input"
-                                      >
+                                    {values.ads[adIndex].prices[priceIndex].category === 'size' && (
+                                      <Field as="select" name={`ads.${adIndex}.prices.${priceIndex}.unit`} className="styled-input">
                                         <option value="">Unit</option>
                                         <option value="Inch">Inch</option>
-                                        <option value="Centimeter">
-                                          Centimeter
-                                        </option>
+                                        <option value="Centimeter">Centimeter</option>
                                       </Field>
                                     )}
-
-                                    {values.ads[adIndex].prices[priceIndex]
-                                      .category === 'duration' && (
-                                      <Field
-                                        as="select"
-                                        name={`ads.${adIndex}.prices.${priceIndex}.unit`}
-                                        className="styled-input"
-                                      >
+                                    {values.ads[adIndex].prices[priceIndex].category === 'duration' && (
+                                      <Field as="select" name={`ads.${adIndex}.prices.${priceIndex}.unit`} className="styled-input">
                                         <option value="">Unit</option>
                                         <option value="Hour">Hour</option>
                                         <option value="Day">Day</option>
@@ -336,48 +266,17 @@ export default function AccountCreateMobile() {
                                         <option value="Month">Month</option>
                                       </Field>
                                     )}
+                                    <ErrorMessage name={`ads.${adIndex}.prices.${priceIndex}.unit`} component="div" className="error-text" />
 
-                                    <ErrorMessage
-                                      name={`ads.${adIndex}.prices.${priceIndex}.unit`}
-                                      component="div"
-                                      className="error-text"
-                                    />
+                                    <Field name={`ads.${adIndex}.prices.${priceIndex}.price`} placeholder="Price" className="styled-input" />
+                                    <ErrorMessage name={`ads.${adIndex}.prices.${priceIndex}.price`} component="div" className="error-text" />
 
-                                    {/* PRICE */}
-                                    <Field
-                                      name={`ads.${adIndex}.prices.${priceIndex}.price`}
-                                      placeholder="Price"
-                                      className="styled-input"
-                                    />
-
-                                    <ErrorMessage
-                                      name={`ads.${adIndex}.prices.${priceIndex}.price`}
-                                      component="div"
-                                      className="error-text"
-                                    />
-
-                                    {/* REMOVE BUTTON */}
                                     {ad.prices.length > 1 && (
-                                      <IoCloseCircleOutline
-                                        size={20}
-                                        color="red"
-                                        onClick={() => removePrice(priceIndex)}
-                                      />
+                                      <IoCloseCircleOutline size={20} color="red" onClick={() => removePrice(priceIndex)} />
                                     )}
                                   </div>
                                 ))}
-
-                                <button
-                                  type="button"
-                                  className="add-small-btn"
-                                  onClick={() =>
-                                    pushPrice({
-                                      category: '',
-                                      unit: '',
-                                      price: '',
-                                    })
-                                  }
-                                >
+                                <button type="button" className="add-small-btn" onClick={() => pushPrice({ category: '', unit: '', price: '' })}>
                                   + Add Price
                                 </button>
                               </>
@@ -392,26 +291,11 @@ export default function AccountCreateMobile() {
                               accept="image/*"
                               onChange={(e) => {
                                 const newFiles = Array.from(e.target.files)
-
-                                const existingFiles =
-                                  values.ads[adIndex].images || []
-                                const existingPreviews =
-                                  values.ads[adIndex].imagePreviews || []
-
-                                const newPreviews = newFiles.map((file) =>
-                                  URL.createObjectURL(file),
-                                )
-
-                                setFieldValue(`ads.${adIndex}.images`, [
-                                  ...existingFiles,
-                                  ...newFiles,
-                                ])
-
-                                setFieldValue(`ads.${adIndex}.imagePreviews`, [
-                                  ...existingPreviews,
-                                  ...newPreviews,
-                                ])
-
+                                const existingFiles = values.ads[adIndex].images || []
+                                const existingPreviews = values.ads[adIndex].imagePreviews || []
+                                const newPreviews = newFiles.map((file) => URL.createObjectURL(file))
+                                setFieldValue(`ads.${adIndex}.images`, [...existingFiles, ...newFiles])
+                                setFieldValue(`ads.${adIndex}.imagePreviews`, [...existingPreviews, ...newPreviews])
                                 e.target.value = null
                               }}
                             />
@@ -421,29 +305,16 @@ export default function AccountCreateMobile() {
                             {ad.imagePreviews?.map((src, i) => (
                               <div key={i} className="preview-box">
                                 <img src={src} alt="preview" />
-
                                 <IoCloseCircleOutline
                                   size={20}
                                   color="red"
                                   onClick={() => {
-                                    const updatedFiles = [
-                                      ...values.ads[adIndex].images,
-                                    ]
-                                    const updatedPreviews = [
-                                      ...values.ads[adIndex].imagePreviews,
-                                    ]
-
+                                    const updatedFiles = [...values.ads[adIndex].images]
+                                    const updatedPreviews = [...values.ads[adIndex].imagePreviews]
                                     updatedFiles.splice(i, 1)
                                     updatedPreviews.splice(i, 1)
-
-                                    setFieldValue(
-                                      `ads.${adIndex}.images`,
-                                      updatedFiles,
-                                    )
-                                    setFieldValue(
-                                      `ads.${adIndex}.imagePreviews`,
-                                      updatedPreviews,
-                                    )
+                                    setFieldValue(`ads.${adIndex}.images`, updatedFiles)
+                                    setFieldValue(`ads.${adIndex}.imagePreviews`, updatedPreviews)
                                   }}
                                 />
                               </div>
@@ -455,17 +326,7 @@ export default function AccountCreateMobile() {
                       <button
                         type="button"
                         className="add-ad-btn"
-                        onClick={() =>
-                          push({
-                            type: '',
-                            category: '',
-                            title: '',
-                            description: '',
-                            prices: [],
-                            images: [],
-                            imagePreviews: [],
-                          })
-                        }
+                        onClick={() => push({ type: '', category: '', title: '', description: '', prices: [], images: [], imagePreviews: [] })}
                       >
                         + Add Ad
                       </button>
@@ -475,19 +336,10 @@ export default function AccountCreateMobile() {
 
                 {/* SUBMIT */}
                 <div className="bottom-bar">
-                  <Button
-                    type="submit"
-                    className="primary-btn"
-                    disabled={isSubmitting}
-                  >
+                  <Button type="submit" className="primary-btn" disabled={isSubmitting}>
                     {isSubmitting ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2"></span>
-                        Submitting...
-                      </>
-                    ) : (
-                      'SUBMIT ALL'
-                    )}
+                      <><span className="spinner-border spinner-border-sm me-2"></span>Submitting...</>
+                    ) : 'SUBMIT ALL'}
                   </Button>
                 </div>
               </Form>
