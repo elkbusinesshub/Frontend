@@ -1,122 +1,189 @@
+/* ===== Sidebar Base ===== */
 .sidebar {
     position: fixed;
+    top: 0;
+    left: 0;
     width: 250px;
     min-height: 100vh;
     background-color: #ffffff;
     color: rgb(0, 0, 0);
-    box-shadow: 0 1px 10px 0px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 1px 10px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease-in-out;
+    z-index: 1050;
 }
-.togglebtn{
-    display: none;
+/* Overlay */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+  opacity: 0;
+  visibility: hidden;
+  transition: 0.3s;
+  z-index: 998;
 }
+
+.sidebar-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ===== Submenu ===== */
+.children {
+    background-color: #fafafa;
+}
+
+.subitem {
+    display: block;
+    padding: 10px 20px 10px 50px;
+    text-decoration: none;
+    color: black;
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+.subitem:hover {
+    background-color: #eaeaea;
+}
+
+.subitem.active {
+    background-color: #f0f0f0;
+    border-left: 4px solid #007bff;
+}
+
+@media (min-width: 601px) {
+    .sidebar {
+        transform: translateX(0);
+    }
+}
+
+/* Mobile Hidden by Default */
+@media (max-width: 800px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+}
+
+/* ===== Overlay ===== */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgb(255, 255, 255);
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.3s;
+    z-index: 1040;
+}
+
+.sidebar-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+@media (min-width: 601px) {
+    .sidebar-overlay {
+        display: none;
+    }
+}
+
+/* ===== Logo ===== */
 .sidebar .logo {
     width: 60%;
-    margin-left: 20%;
-    margin-top: 20px;
+    margin: 20px auto;
     display: flex;
     justify-content: center;
-    align-items: center;
 }
 
 .sidebar .logo img {
     width: 100%;
-    height: 100%;
     object-fit: contain;
 }
 
+/* ===== Links ===== */
 .sidebar .links {
-    width: 80%;
-    margin-left: 15%;
-    margin-top: 30px;
+    width: 85%;
+    margin: 30px auto;
 }
 
-.sidebar .links .listitem {
-    margin-bottom: 5px;
+.listitem {
+    display: block;
     text-decoration: none;
     color: black;
-}
-.sidebar .links .nolistitems{
-    text-decoration: none;
-    color: black;
-}
-.sidebar .links .listitem .listitemhead {
-    display: flex;
-    padding: 5px 0;
-    cursor: pointer;
+    margin-bottom: 8px;
+    padding: 8px 5px;
+    border-radius: 6px;
+    transition: 0.2s;
 }
 
-.sidebar .links .listitem .listitemhead .icon {
-    height: 100%;
-    width: 20%;
+.listitem:hover {
+    background-color: #f2f2f2;
+}
+
+.listitem.active {
+    background-color: #e6f0ff;
+    font-weight: 600;
+}
+
+.listitemhead {
+    display: flex;
+    align-items: center;
+}
+
+.icon {
+    width: 30%;
     display: flex;
     justify-content: center;
-    align-items: center;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
 }
 
-.sidebar .links .listitem .listitemhead .title {
-    height: 100%;
-    width: 60%;
-    display: flex;
-    justify-content: flex-start;
-    align-items: flex-end;
-    padding-top: 5px;
-}
-.sidebar .links .listitem .listitemhead .arrow {
-    height: 100%;
-    width: 20%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.3rem;
+.title {
+    width: 70%;
+    font-size: 15px;
 }
 
-.children {
-    overflow: hidden;
-    max-height: 0;
-    transition: max-height 0.3s ease-out;
+/* ===== Mobile Toggle Header ===== */
+.togglebtn {
+    display: none;
 }
 
-.children.open {
-    max-height: 1000px;
-}
-
-@media only screen and (max-width: 600px) {
-    .sidebar {
-        height: 100%;
-        display: none;
-        box-shadow: none;
-        padding-top: 30px;
-    }
-    .sidebar.open{
-        display: block;
-    }
-    .togglebtn{
+@media (max-width: 800px) {
+    .togglebtn {
         display: flex;
         width: 100%;
-        background-color: white;
-        height: 30px;
+        height: 55px;
         position: fixed;
-        z-index: 100000000;
-        justify-content: flex-start;
+        background-color: transparent;
+        top: 0;
+        left: 0;
+        z-index: 1100;
         align-items: center;
     }
-    .togglebtn .btn{
+
+    .togglebtn .btn {
         width: 20%;
         display: flex;
         justify-content: center;
         align-items: center;
+        cursor: pointer;
     }
-    .togglebtn .logo{
+
+    .togglebtn .logo {
         width: 80%;
         display: flex;
         justify-content: center;
-        align-items: center;
     }
 
     .togglebtn .logo img {
-        width: 80%;
-        height: 80%;
+        width: 60%;
         object-fit: contain;
     }
 }

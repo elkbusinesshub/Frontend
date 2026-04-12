@@ -70,7 +70,6 @@ function App() {
         { id: 7, title: 'Clothes', image: clothes },
         { id: 8, title: 'Helicopters', image: helicopter },
     ];
- 
 
     return (
         <>

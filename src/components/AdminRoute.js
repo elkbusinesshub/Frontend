@@ -9,7 +9,6 @@ const AdminRoute = ({ children }) => {
     if (token && role === "admin") {
         return children;
     }
-
     return <Error />;
 };
 

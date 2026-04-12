@@ -4,6 +4,7 @@ import './OfferForm.css';
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useSelector } from 'react-redux';
+import { Link } from "react-router-dom";
 
 export default function OfferForm({ selectedItem, onBack, onSubmit, formData, setFormData }) {
   const [showPriceModal, setShowPriceModal] = useState(false);
@@ -154,7 +155,18 @@ export default function OfferForm({ selectedItem, onBack, onSubmit, formData, se
         <ul className="price-list">
           {priceDetailsList.map((detail, index) => (
             <li key={index} className="price-item">
-              <strong>{`₹${detail.amount}`}</strong> per {detail.unit}
+              {Number(detail?.amount) > 0 ? (
+                <>
+                  <strong>{`₹${detail.amount}`}</strong> per {detail.unit}
+                </>
+              ):
+                <div className="contact-btn">
+                  <strong>Price:</strong>{" "}
+                  <Link to="/profile" className="price-link">
+                    Get price
+                  </Link>
+                </div>
+              } 
               <button type="button" className="edit-price-btn m-2" onClick={() => handleEditPrice(index)}>
                 Edit
               </button>

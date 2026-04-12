@@ -196,6 +196,7 @@ const EditProfile = ({ user, onClose, onProfileUpdated, token, show }) => {
     }
   }
 
+
   const handleVerifyOtp = async () => {
     try {
       //   setLoading(true);

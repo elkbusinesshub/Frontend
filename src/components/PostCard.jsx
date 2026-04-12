@@ -1,4 +1,8 @@
-import { Carousel } from 'react-bootstrap'
+
+import { Carousel } from 'react-bootstrap';
+import { Link } from "react-router-dom";
+
+
 
 const PostCard = ({ post, onClick, isMyAd }) => {
   return (

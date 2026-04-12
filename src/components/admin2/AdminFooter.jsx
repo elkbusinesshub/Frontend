@@ -1,5 +1,3 @@
-import '../styles/admin/AdminFooter.css';
-
 function AdminFooter() {
   return (
     <div className="adminfooter">
