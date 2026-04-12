@@ -7,7 +7,8 @@ const Careers = () => {
   return (
     <div>
       <a href="/" style={{ display: 'inline-block' }}>
-      <Image src={logonew} thumbnail style={{ marginTop:'30px',marginLeft:'50px',marginBottom:'30px',width: '208px', height: '80px', border: 'none' }} />
+      <Image src={logonew} thumbnail style={{ marginTop:'20px',marginLeft:'50px',marginBottom:'20px',width: '200px',
+                height: '50px', border: 'none' }} />
       </a>
       <div style={{ 
       display: 'flex', 

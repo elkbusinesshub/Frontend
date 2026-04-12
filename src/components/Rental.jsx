@@ -1,226 +1,177 @@
-import React, { useState, useEffect } from 'react';
-import Carousel from './Carousel';
-import PostCard from './PostCard';
-import PostModal from './PostModal';
-import axios from 'axios';
-import car from '../assets/home_cate_cars.png';
-import property from '../assets/home_cate_properties.png';
-import electronics from '../assets/home_cate_electronics.png';
-import tools from '../assets/home_cate_tools.png';
-import furniture from '../assets/home_cate_furniture.png';
-import bike from '../assets/home_cate_bikes.png';
-import clothes from '../assets/home_cate_clothes.png';
-import helicopter from '../assets/home_cate_helicopter.png';
-import { useNavigate } from 'react-router-dom';
-import Loader from './Loader';
-import EmptyState from './EmptyAd';
-import { useSelector } from 'react-redux';
+import React, { useState, useCallback, useRef } from "react";
+import Carousel from "./Carousel";
+import PostCard from "./PostCard";
+import PostModal from "./PostModal";
+import car from "../assets/home_cate_cars.png";
+import property from "../assets/home_cate_properties.png";
+import electronics from "../assets/home_cate_electronics.png";
+import tools from "../assets/home_cate_tools.png";
+import furniture from "../assets/home_cate_furniture.png";
+import bike from "../assets/home_cate_bikes.png";
+import clothes from "../assets/home_cate_clothes.png";
+import helicopter from "../assets/home_cate_helicopter.png";
+import { useNavigate } from "react-router-dom";
+import Loader from "./Loader";
+import EmptyState from "./EmptyAd";
+import { useSelector } from "react-redux";
+import { useRecommendedPostQuery } from "../store/services/post.service";
+import "./Rental.css"
+
+const LIMIT = 10;
 
 const Rental = () => {
   const rentalCategories = [
-    { id: 1, title: 'Car', image: car },
-    { id: 2, title: 'Property', image: property },
-    { id: 3, title: 'Electronics', image: electronics },
-    { id: 4, title: 'Tools', image: tools },
-    { id: 5, title: 'Furniture', image: furniture },
-    { id: 6, title: 'Bike', image: bike },
-    { id: 7, title: 'Clothes', image: clothes },
-    { id: 8, title: 'Helicopter', image: helicopter },
+    { id: 1, title: "Cars", image: car },
+    { id: 2, title: "Properties", image: property },
+    { id: 3, title: "Electronics", image: electronics },
+    { id: 4, title: "Tools", image: tools },
+    { id: 5, title: "Furnitures", image: furniture },
+    { id: 6, title: "Bikes", image: bike },
+    { id: 7, title: "Clothes", image: clothes },
+    { id: 8, title: "Helicopters", image: helicopter },
   ];
 
   const [selectedPost, setSelectedPost] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [ads, setAds] = useState([]);
-  const [cars, setCars] = useState([]);
-  const [properties, setProperties] = useState([]);
-  const [electronicses, setElectronicses] = useState([]);
-  const [bikes, setBikes] = useState([]);
-  const token = localStorage.getItem('elk_authorization_token');
-  const [loading, setLoading] = useState(true);
+  const [offset, setOffset] = useState(0);
+  const [allPosts, setAllPosts] = useState([]);
+  const [hasMore, setHasMore] = useState(true);
+  const observerRef = useRef(null);
+  const prevDataRef = useRef(null); // track previous RTK data to avoid duplicate appends
+
   const navigate = useNavigate();
-  const { user } = useSelector((state) => state.auth);
+  const { user, token } = useSelector((state) => state.auth);
+  const [location, setLocation] = useState(null);
+  const [locationReady, setLocationReady] = useState(!!token); // if token, no need for location
+
+  React.useEffect(() => {
+    if (!token && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+          setLocationReady(true);
+        },
+        (error) => {
+          console.warn("Location access denied or unavailable", error);
+          setLocationReady(true); // proceed even without location
+        }
+      );
+    }
+  }, [token]);
+
+  const basePayload = React.useMemo(() => {
+    if (token) return { id: user?.user_id };
+    if (location) return { latitude: location.latitude, longitude: location.longitude };
+    return {};
+  }, [token, user?.user_id, location]);
+
+  const queryPayload = React.useMemo(
+    () => ({ ...basePayload, limit: LIMIT, offset }),
+    [basePayload, offset]
+  );
+
+  const { data, isLoading, isFetching } = useRecommendedPostQuery(queryPayload, {
+    skip: !locationReady, // don't fetch until we know location or token
+  });
+  console.log(data)
+
+  // Accumulate posts whenever RTK returns new data
+  React.useEffect(() => {
+    if (!data) return;
+    // Avoid processing the same response twice (RTK can re-render with same data)
+    if (prevDataRef.current === data) return;
+    prevDataRef.current = data;
+
+    const newPosts = data?.data ?? [];
+    const totalCount = data?.totalCount ?? 0;
+    console.log(newPosts)
+
+    setAllPosts((prev) => {
+      const existingIds = new Set(prev.map((p) => p.id));
+      const unique = newPosts.filter((p) => !existingIds.has(p.id));
+      return [...prev, ...unique];
+    });
+
+    setHasMore(offset + LIMIT < totalCount);
+  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Intersection Observer — fires when sentinel enters viewport
+  const sentinelRef = useCallback(
+    (node) => {
+      if (isFetching) return;
+      if (observerRef.current) observerRef.current.disconnect();
+      observerRef.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMore && !isFetching) {
+          setOffset((prev) => prev + LIMIT);
+        }
+      });
+      if (node) observerRef.current.observe(node);
+    },
+    [isFetching, hasMore]
+  );
+
   const handleCategoryClick = (category) => {
-    const path = `/rental/${category.title.toLowerCase()}`;
-    navigate(path);
+    console.log("handlecategoryclick",category)
+    navigate(`/rental/${category.title.toLowerCase()}`);
   };
 
-  useEffect(() => {
-    const fetchAds = async () => {
-      let requestBody = { page: 1 };
-  
-      if (token) {
-        const userId = user?.user_id;
-        requestBody.id = userId;
-      } else {
-        if (navigator.geolocation) {
-          try {
-            const position = await new Promise((resolve, reject) => {
-              navigator.geolocation.getCurrentPosition(resolve, reject);
-            });
-            requestBody.latitude = position.coords.latitude;
-            requestBody.longitude = position.coords.longitude;
-          } catch (error) {
-            console.warn('Location access denied or unavailable', error);
-          }
-        }
-      }
-  
-      try {
-        const response = await axios.post(
-          `${process.env.REACT_APP_API_BASE_URL}/api/recomented_posts`,
-          requestBody,
-          {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-          }
-        );
-        const car_res = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/rent_category_posts`, 
-          {
-            ad_type: 'rent',
-            category: 'car'
-          },
-          {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        const prop_res = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/rent_category_posts`, 
-          {
-            ad_type: 'rent',
-            category: 'property'
-          },
-          {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        const electro_res = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/rent_category_posts`, 
-          {
-            ad_type: 'rent',
-            category: 'electronics'
-          },
-          {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        const bikes_res = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/rent_category_posts`, 
-          {
-            ad_type: 'rent',
-            category: 'bike'
-          },
-          {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setCars(car_res.data.data);
-        setElectronicses(electro_res.data.data);
-        setBikes(bikes_res.data.data);
-        setProperties(prop_res.data.data);
-        setAds(response.data.data);
-      } catch (error) {
-        console.error('Failed to fetch ads:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAds();
-  }, [token, user]);
-
   const handleCardClick = (post) => {
-    setSelectedPost(post);    
+    setSelectedPost(post);
     setShowModal(true);
   };
 
   return (
-    <>
-      <div className="container" style={{ minHeight: "80vh"}}>
-        <Carousel categories={rentalCategories} onCategoryClick={handleCategoryClick}/>
-        <h3 className="ml-5 mb-4">Recommended Posts</h3>
-          {loading ? (
-            <Loader/>
-          ) : ads.length > 0 ? (
-            <div className="d-flex overflow-auto gap-3 scroll-row-rent" style={{ scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', paddingBottom: '1rem' }}>
-              {ads.map((post) => (
-                <div key={post.id} style={{ flex: '0 0 auto' }}>
-                  <PostCard post={post} onClick={handleCardClick} isMyAd={false}/>
-                </div>
-              ))}
+    <div className="container" style={{ minHeight: "80vh" }}>
+      <Carousel categories={rentalCategories} onCategoryClick={handleCategoryClick} />
+
+      <h3 className="ml-5 mb-4">Recommended Posts</h3>
+
+      {isLoading && offset === 0 ? (
+        <Loader />
+      ) : allPosts.length > 0 ? (
+        <>
+          {/* Vertical list */}
+          <div
+            className="posts-grid"
+          >
+            {allPosts.map((post) => (
+              <div key={post.id}>
+                <PostCard post={post} onClick={handleCardClick} isMyAd={false} />
+              </div>
+            ))}
+          </div>
+
+          {/* Sentinel — triggers next page load */}
+          {hasMore && <div ref={sentinelRef} style={{ height: "1px" }} />}
+
+          {/* Spinner for subsequent loads */}
+          {isFetching && offset > 0 && (
+            <div style={{ textAlign: "center", padding: "1rem" }}>
+              <Loader />
             </div>
-          ) : (
-            <EmptyState />
           )}
-          {loading ? (
-            <Loader/>
-          ) : cars.length > 0 ? (
-            <>
-              <h3 className="ml-5 mb-4">Cars</h3>
-              <div className="d-flex overflow-auto gap-3 scroll-row-rent" style={{ scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', paddingBottom: '1rem' }}>
-                {cars.map((post) => (
-                  <div key={post.id} style={{ flex: '0 0 auto' }}>
-                    <PostCard post={post} onClick={handleCardClick} isMyAd={false}/>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : (
-            <></>
+
+          {/* End of results */}
+          {!hasMore && (
+            <p style={{ textAlign: "center", color: "#888", padding: "1.5rem 0" }}>
+              You've seen all posts!
+            </p>
           )}
-          {loading ? (
-            <Loader/>
-          ) : properties.length > 0 ? (
-           <>
-            <h3 className="ml-5 mb-4">Properties</h3>
-            <div className="d-flex overflow-auto gap-3 scroll-row-rent" style={{ scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', paddingBottom: '1rem' }}>
-              {properties.map((post) => (
-                <div key={post.id} style={{ flex: '0 0 auto' }}>
-                  <PostCard post={post} onClick={handleCardClick} isMyAd={false}/>
-                </div>
-              ))}
-            </div>
-           </>
-          ) : (
-            <></>
-          )}
-          {loading ? (
-            <Loader/>
-          ) : electronicses.length > 0 ? (
-            <>
-              <h3 className="ml-5 mb-4">Electronics</h3>
-              <div className="d-flex overflow-auto gap-3 scroll-row-rent" style={{ scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', paddingBottom: '1rem' }}>
-                {electronicses.map((post) => (
-                  <div key={post.id} style={{ flex: '0 0 auto' }}>
-                    <PostCard post={post} onClick={handleCardClick} isMyAd={false}/>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : (
-            <></>
-          )}
-          {loading ? (
-            <Loader/>
-          ) : bikes.length > 0 ? (
-            <>
-              <h3 className="ml-5 mb-4">Bikes</h3>
-              <div className="d-flex overflow-auto gap-3 scroll-row-rent" style={{ scrollSnapType: 'x mandatory', scrollBehavior: 'smooth', paddingBottom: '1rem' }}>
-                {bikes.map((post) => (
-                  <div key={post.id} style={{ flex: '0 0 auto' }}>
-                    <PostCard post={post} onClick={handleCardClick} isMyAd={false}/>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : (
-            <></>
-          )}
-        <PostModal isMyAd={false} show={showModal} onHide={() => setShowModal(false)} post={selectedPost} />
-      </div>
-    </>
+        </>
+      ) : (
+        !isFetching && <EmptyState />
+      )}
+
+      <PostModal
+        isMyAd={false}
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        post={selectedPost}
+      />
+    </div>
   );
 };
 

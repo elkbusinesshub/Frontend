@@ -186,9 +186,32 @@
         width: 60%;
         object-fit: contain;
     }
+}
 
-    /* Push content below header */
-    body {
-        padding-top: 55px;
-    }
+.sidebar .links .listitem {
+    margin-bottom: 5px;
+    text-decoration: none;
+    color: black;
+    display: block;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.sidebar .links .listitem.active {
+    background-color: rgba(79, 187, 180, 0.15);
+    border-radius: 8px;
+}
+
+.sidebar .links .listitem.active .listitemhead .title {
+    color: #4FBBB4;
+    font-weight: 600;
+}
+
+.sidebar .links .listitem.active .listitemhead .icon {
+    color: #4FBBB4;
+}
+
+.sidebar .links .listitem:hover {
+    background-color: rgba(79, 187, 180, 0.08);
+    border-radius: 8px;
 }

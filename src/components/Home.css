@@ -176,11 +176,25 @@
   margin-top: 20px;
 }
 
-.banner-container .popimg,
+/* .banner-container .popimg,
 .services-banner .popimg{
   width: 400px;
   position: relative;
   z-index: 2;
+} */
+
+.banner-container,
+.services-banner {
+  position: relative;
+  width: 100%;
+  min-height: 400px;   /* match your background image height */
+  overflow: hidden;
+}
+
+.popimg {
+  max-height: 400px;
+  width: auto;
+  object-fit: contain;
 }
 
 @media only screen and (max-width: 600px){

@@ -187,7 +187,7 @@ export default function OfferForm({ selectedItem, onBack, onSubmit, formData, se
         <button type="button" className="btn-secondary" onClick={onBack}>
           Back
         </button>
-        <button type="submit" className="btn-next" disabled={priceDetailsList.length === 0} onSubmit={handleSubmit}>
+        <button type="submit" className="btn-next"  onSubmit={handleSubmit}>
           Next
         </button>
       </div>
