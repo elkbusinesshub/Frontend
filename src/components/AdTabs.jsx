@@ -19,7 +19,8 @@ import electrician from '../assets/electrician.png';
 import OfferForm from './OfferForm';
 import ImageUploadForm from './ImageUploadForm'
 import { useSelector } from 'react-redux';
-import axios from 'axios';
+// import axios from 'axios';
+import { useCreatePostMutation } from '../store/services/post.service';
 
 import './AdTabs.css';
 
@@ -54,6 +55,7 @@ export default function AdTabs() {
   const {token} = useSelector(state => state.auth);
   const [currentPostId, setCurrentPostId] = useState(null);
   const [showImageUploadModal, setShowImageUploadModal] = useState(false);
+  const [ createPost, {isLoading: createPostLoading}] = useCreatePostMutation();
 
   const handleCategoryClick = (itemName) => {
     setSelectedItem({ type: activeTab, name: itemName });
@@ -61,12 +63,13 @@ export default function AdTabs() {
 
   const handleFormSubmit = async (formData) => {
     try {
-        const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/create_post`, formData, {
-            headers: {
-                'authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        // const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/create_post`, formData, {
+        //     headers: {
+        //         'authorization': `Bearer ${token}`,
+        //         'Content-Type': 'application/json'
+        //     }
+        // });
+        const response = createPost(formData);
         const adId = response.data.ad_id;
         setCurrentPostId(adId);
         setShowImageUploadModal(true);

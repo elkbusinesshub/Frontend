@@ -1,51 +1,41 @@
 import Sidebar from "./SideBar";
 import '../../styles/admin/HomeAdmin.css';
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { useState } from "react";
 import Loader from "../Loader";
+import { useGetSalesAdsListQuery } from "../../store/services/admin.service";
+import dayjs from "dayjs";
 
+const LIMIT = 10;
 
 function AdminHome() {
-    const [ads, setAds] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const token = localStorage.getItem('elk_authorization_token');
+    const [offset, setOffset] = useState(0);
     const [sliderIndex, setSliderIndex] = useState({});
-    useEffect(() => {
-        const fetchData = async () => {
-            await fetchAds();
-            setLoading(false);
-        };
-        fetchData();
-    }, []);
 
-    const fetchAds = async () => {
-        try {
-            const response = await axios.get(
-                `${process.env.REACT_APP_API_BASE_URL}/api/get_sales_ads`,
-                {
-                    headers: token ? { Authorization: `Bearer ${token}` } : {},
-                }
-            );
-            setAds(response.data.data || []);
-        } catch (error) {
-            console.error("Error fetching ads:", error);
-        }
-    };
+    const { data: adsData, isLoading: adsDataLoading } = useGetSalesAdsListQuery(
+        { limit: LIMIT, offset }
+    );
+
+    const ads = adsData?.data ?? [];
+    const total = adsData?.total ?? 0;
+    const currentPage = Math.floor(offset / LIMIT) + 1;
+    const totalPages = Math.ceil(total / LIMIT);
+
+    const handlePrev = () => setOffset((prev) => Math.max(prev - LIMIT, 0));
+    const handleNext = () => setOffset((prev) => prev + LIMIT);
+
     return (
         <>
             <Sidebar />
-
             <div className="homeadmin">
                 <div className="filters">
-                    <div>
-                        <h4>Total: {ads.length}</h4>
-                    </div>
+                    <h4>Total: {total}</h4>
                 </div>
 
-                {loading ? (
+                {adsDataLoading ? (
                     <Loader />
                 ) : (
                     <>
+                        {/* Desktop Table */}
                         <div className="admin-table-container d-none d-md-block">
                             <table className="admin-table">
                                 <thead>
@@ -62,77 +52,23 @@ function AdminHome() {
                                         <th>Date</th>
                                     </tr>
                                 </thead>
-
                                 <tbody>
                                     {ads.length > 0 ? (
                                         ads.map((ad, index) => (
                                             <tr key={ad.id}>
-                                                <td className="table-cell-small">{index + 1}</td>
-
-                                                <td className="table-cell-limit" title={ad.ad_id}>
-                                                {ad.ad_id}
+                                                <td>{offset + index + 1}</td>
+                                                <td>{ad.title}</td>
+                                                <td>{ad.category}</td>
+                                                <td>{ad.ad_type}</td>
+                                                <td>
+                                                    {ad.ad_location
+                                                        ? `${ad.ad_location.place ? ad.ad_location.place + ", " : ""}${ad.ad_location.state ?? ""}`
+                                                        : "N/A"}
                                                 </td>
-
-                                                <td className="table-cell-limit" title={ad.title}>
-                                                {ad.title}
-                                                </td>
-
-                                                <td className="table-cell-limit" title={ad.description}>
-                                                {ad.description}
-                                                </td>
-
-                                                <td className="table-cell-limit" title={ad.category}>
-                                                {ad.category}
-                                                </td>
-
-                                                <td className="table-cell-limit" title={ad.ad_type}>
-                                                {ad.ad_type}
-                                                </td>
-
-                                                <td className="table-cell-limit" title={ad.user?.mobile_number}>
-                                                {ad.user?.mobile_number ?? "-"}
-                                                </td>
-
-                                                <td className="table-cell-limit" title={ad.user?.email}>
-                                                {ad.user?.email ?? "-"}
-                                                </td>
-
-                                                <td className="table-cell-limit" title={ad.ad_status}>
-                                                {ad.ad_status}
-                                                </td>
-
-                                                <td
-                                                className="table-cell-limit"
-                                                title={
-                                                    ad.ad_location
-                                                    ? [ad.ad_location.place, ad.ad_location.district, ad.ad_location.state]
-                                                        .filter(Boolean)
-                                                        .join(", ")
-                                                    : "N/A"
-                                                }
-                                                >
-                                                {ad.ad_location
-                                                    ? [ad.ad_location.place, ad.ad_location.district, ad.ad_location.state]
-                                                        .filter(Boolean)
-                                                        .join(", ")
-                                                    : "N/A"}
-                                                </td>
-
-                                                <td
-                                                className="table-cell-limit"
-                                                title={
-                                                    ad.ad_price_details?.length > 0
-                                                    ? ad.ad_price_details
-                                                        .map((p) => `₹${p.rent_price}/${p.rent_duration}`)
-                                                        .join(", ")
-                                                    : "N/A"
-                                                }
-                                                >
-                                                {ad.ad_price_details?.length > 0
-                                                    ? ad.ad_price_details
-                                                        .map((p) => `₹${p.rent_price}/${p.rent_duration}`)
-                                                        .join(", ")
-                                                    : "N/A"}
+                                                <td>
+                                                    {ad.ad_price_details?.length > 0
+                                                        ? ad.ad_price_details.map((p) => `₹${p.rent_price}/${p.rent_duration}`).join(", ")
+                                                        : "N/A"}
                                                 </td>
 
                                                 <td>
@@ -143,110 +79,81 @@ function AdminHome() {
                                                                 alt="Ad"
                                                                 className="ad-card-img"
                                                             />
-
                                                             {ad.ad_images.length > 1 && (
                                                                 <>
                                                                     <button
-                                                                    className="nav-btn left"
-                                                                    onClick={() =>
-                                                                        setSliderIndex((prev) => {
-                                                                        const current = prev[ad.id] || 0;
-                                                                        const newIndex =
-                                                                            current === 0 ? ad.ad_images.length - 1 : current - 1;
-                                                                        return { ...prev, [ad.id]: newIndex };
-                                                                        })
-                                                                    }
-                                                                    >
-                                                                    ‹
-                                                                    </button>
-
+                                                                        className="nav-btn left"
+                                                                        onClick={() =>
+                                                                            setSliderIndex((prev) => {
+                                                                                const current = prev[ad.id] || 0;
+                                                                                return { ...prev, [ad.id]: current === 0 ? ad.ad_images.length - 1 : current - 1 };
+                                                                            })
+                                                                        }
+                                                                    >‹</button>
                                                                     <button
-                                                                    className="nav-btn right"
-                                                                    onClick={() =>
-                                                                        setSliderIndex((prev) => {
-                                                                        const current = prev[ad.id] || 0;
-                                                                        const newIndex =
-                                                                            current === ad.ad_images.length - 1 ? 0 : current + 1;
-                                                                        return { ...prev, [ad.id]: newIndex };
-                                                                        })
-                                                                    }
-                                                                    >
-                                                                    ›
-                                                                    </button>
+                                                                        className="nav-btn right"
+                                                                        onClick={() =>
+                                                                            setSliderIndex((prev) => {
+                                                                                const current = prev[ad.id] || 0;
+                                                                                return { ...prev, [ad.id]: current === ad.ad_images.length - 1 ? 0 : current + 1 };
+                                                                            })
+                                                                        }
+                                                                    >›</button>
                                                                 </>
                                                             )}
                                                         </div>
                                                     )}
                                                 </td>
-
-                                                <td className="table-cell-limit" title={ad.user?.name}>
-                                                {ad.user?.name || "User"}
-                                                </td>
-
-                                                <td className="table-cell-date">
-                                                {new Date(ad.createdAt).toLocaleDateString()}
-                                                </td>
+                                                <td>{ad.user?.name || "User"}</td>
+                                                <td>{dayjs(ad.createdAt).format("MMM D, YYYY")}</td>
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="13" style={{ textAlign: "center" }}>
-                                                No ads found
-                                            </td>
+                                            <td colSpan="9" style={{ textAlign: "center" }}>No ads found</td>
                                         </tr>
                                     )}
                                 </tbody>
                             </table>
                         </div>
 
-                        {/* ================= MOBILE CARD VIEW ================= */}
+                        {/* Mobile Cards */}
                         <div className="d-block d-md-none">
                             {ads.length > 0 ? (
                                 ads.map((ad, index) => (
                                     <div key={ad.id} className="ad-card">
                                         <div className="ad-card-header">
-                                            <strong>{index + 1}. {ad.title}</strong>
+                                            <strong>{offset + index + 1}. {ad.title}</strong>
                                         </div>
-
                                         <div className="ad-card-body">
                                             {ad.ad_images?.length > 0 && (
                                                 <div className="ad-slider">
                                                     <img
-                                                    src={ad.ad_images[sliderIndex[ad.id] || 0]?.image}
-                                                    alt="Ad"
-                                                    className="ad-card-img"
+                                                        src={ad.ad_images[sliderIndex[ad.id] || 0]?.image}
+                                                        alt="Ad"
+                                                        className="ad-card-img"
                                                     />
-
                                                     {ad.ad_images.length > 1 && (
-                                                    <>
-                                                        <button
-                                                        className="nav-btn left"
-                                                        onClick={() =>
-                                                            setSliderIndex((prev) => {
-                                                            const current = prev[ad.id] || 0;
-                                                            const newIndex =
-                                                                current === 0 ? ad.ad_images.length - 1 : current - 1;
-                                                            return { ...prev, [ad.id]: newIndex };
-                                                            })
-                                                        }
-                                                        >
-                                                        ‹
-                                                        </button>
-
-                                                        <button
-                                                        className="nav-btn right"
-                                                        onClick={() =>
-                                                            setSliderIndex((prev) => {
-                                                            const current = prev[ad.id] || 0;
-                                                            const newIndex =
-                                                                current === ad.ad_images.length - 1 ? 0 : current + 1;
-                                                            return { ...prev, [ad.id]: newIndex };
-                                                            })
-                                                        }
-                                                        >
-                                                        ›
-                                                        </button>
-                                                    </>
+                                                        <>
+                                                            <button
+                                                                className="nav-btn left"
+                                                                onClick={() =>
+                                                                    setSliderIndex((prev) => {
+                                                                        const current = prev[ad.id] || 0;
+                                                                        return { ...prev, [ad.id]: current === 0 ? ad.ad_images.length - 1 : current - 1 };
+                                                                    })
+                                                                }
+                                                            >‹</button>
+                                                            <button
+                                                                className="nav-btn right"
+                                                                onClick={() =>
+                                                                    setSliderIndex((prev) => {
+                                                                        const current = prev[ad.id] || 0;
+                                                                        return { ...prev, [ad.id]: current === ad.ad_images.length - 1 ? 0 : current + 1 };
+                                                                    })
+                                                                }
+                                                            >›</button>
+                                                        </>
                                                     )}
                                                 </div>
                                             )}
@@ -261,14 +168,12 @@ function AdminHome() {
                                             </p>
                                             <p>
                                                 <b>Price:</b>{" "}
-                                                {ad.ad_price_details && ad.ad_price_details.length > 0
-                                                    ? ad.ad_price_details
-                                                        .map((p) => `₹${p.rent_price}/${p.rent_duration}`)
-                                                        .join(", ")
+                                                {ad.ad_price_details?.length > 0
+                                                    ? ad.ad_price_details.map((p) => `₹${p.rent_price}/${p.rent_duration}`).join(", ")
                                                     : "N/A"}
                                             </p>
-                                            <p><b>Posted By:</b> {ad.user?.name}</p>
-                                            <p><b>Date:</b> {new Date(ad.createdAt).toLocaleDateString()}</p>
+                                            <p><b>Posted By:</b> {ad.user?.name || "User"}</p>
+                                            <p><b>Date:</b> {dayjs(ad.createdAt).format("MMM D, YYYY")}</p>
                                         </div>
                                     </div>
                                 ))
@@ -276,6 +181,27 @@ function AdminHome() {
                                 <p style={{ textAlign: "center" }}>No ads found</p>
                             )}
                         </div>
+
+                        {/* Pagination Controls */}
+                        {totalPages > 1 && (
+                            <div className="d-flex justify-content-center align-items-center gap-3 mt-3">
+                                <button
+                                    className="btn btn-outline-secondary btn-sm"
+                                    onClick={handlePrev}
+                                    disabled={offset === 0}
+                                >
+                                    Previous
+                                </button>
+                                <span>Page {currentPage} of {totalPages}</span>
+                                <button
+                                    className="btn btn-outline-secondary btn-sm"
+                                    onClick={handleNext}
+                                    disabled={currentPage >= totalPages}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        )}
                     </>
                 )}
             </div>

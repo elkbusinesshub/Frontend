@@ -61,38 +61,15 @@ function App() {
         { id: 8, title: 'Salon', image: salon },
     ];
     const rentalCategories = [
-        { id: 1, title: 'Car', image: car },
-        { id: 2, title: 'Property', image: property },
+        { id: 1, title: 'Cars', image: car },
+        { id: 2, title: 'Properties', image: property },
         { id: 3, title: 'Electronics', image: electronics },
         { id: 4, title: 'Tools', image: tools },
-        { id: 5, title: 'Furniture', image: furniture },
-        { id: 6, title: 'Bike', image: bike },
+        { id: 5, title: 'Furnitures', image: furniture },
+        { id: 6, title: 'Bikes', image: bike },
         { id: 7, title: 'Clothes', image: clothes },
-        { id: 8, title: 'Helicopter', image: helicopter },
+        { id: 8, title: 'Helicopters', image: helicopter },
     ];
-
-    useEffect(() => {
-        const token = localStorage.getItem('elk_authorization_token');        
-        if (token && token.split('.').length === 3) {
-            const fetchUserData = async () => {
-                try {
-                    const { id: userId } = jwtDecode(token);
-                    const response = await axios.post(
-                        `${process.env.REACT_APP_API_BASE_URL}/api/get_user?id=${userId}`,
-                        {},
-                        {
-                            headers: { authorization: `Bearer ${token}` }
-                        }
-                    );
-                    const userData = response.data;
-                    dispatch(setUser({ user: userData, token, isAdmin: userData.is_admin, role:userData.role }));
-                } catch (error) {
-                    console.error('Failed to fetch user profile:', error);
-                }
-            };
-            fetchUserData();
-        }
-    }, [dispatch]); 
 
     return (
         <>
@@ -144,6 +121,10 @@ function App() {
 }
 
 export default App;
+
+
+
+
 
 
 

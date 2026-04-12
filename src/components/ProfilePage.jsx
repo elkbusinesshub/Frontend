@@ -7,6 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import Loader from './Loader';
 import '../App.css';
 import { clearUser } from '../store/slices/authSlice';
+import { useDeleteAccountMutation } from '../store/services/user.service';
+import { successMessageToast } from './common/hooks/common';
 
 
 const ProfilePage = () => {
@@ -20,39 +22,44 @@ const ProfilePage = () => {
     const refreshUserData = () => {
         navigate('/profile');
     };
+    const [deleteAccount, {isLoading: deleteAccountLoading}] = useDeleteAccountMutation();
     const handleDelete = async () => {
         const confirmed = window.confirm("Are you sure you want to delete your account?");
         if (!confirmed) return;
     
         try {
-            setLoading(true)
-            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/delete_account?user_id=${user.user_id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-            });
+            // setLoading(true)
+            // const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/delete_account?user_id=${user.user_id}`, {
+            //     method: 'DELETE',
+            //     headers: {
+            //         'Authorization': `Bearer ${token}`,
+            //         'Content-Type': 'application/json',
+            //     },
+            // });
+            const response = await deleteAccount(user.user_id);
             
     
-            const data = await response.json();
+            // const data = await response.json();
     
-            if (data.success) {
-                alert("Account deleted successfully");
-                localStorage.removeItem('elk_authorization_token');
+            if (response.success) {
+                // alert("Account deleted successfully");
+                successMessageToast(response?.message)
+                // localStorage.removeItem('elk_authorization_token');
                 // localStorage.removeItem('elk_is_admin');
                 // localStorage.removeItem('elk_user_id');
-                dispatch(clearUser)
+                dispatch(clearUser())
                 navigate('/home');
-            } else {
-                alert(data.message || "Failed to delete account");
-            }
+            } 
+            // else {
+            //     alert(data.message || "Failed to delete account");
+            // }
         } catch (error) {
             console.error("Delete error:", error);
-            alert("An error occurred while deleting your account");
-        } finally{
-            setLoading(false)
-        }
+            // alert("An error occurred while deleting your account");
+        } 
+        // finally{
+        //     setLoading(false)
+        // }
     };
     
     const buttonStyle = {
@@ -78,12 +85,12 @@ const ProfilePage = () => {
             <AppHeader isChat={false} />
             <main className="container py-4" style={{ minHeight: '70vh' }}>
                 {(
-                    loading?<Loader/>:
+                    deleteAccountLoading?<Loader/>:
                     user?
                     <div className="container py-4">
                         <div className="d-flex align-items-center border-bottom pb-4 mb-4 flex-wrap">
                             <img 
-                                src={user.profile ?? 'https://static.vecteezy.com/system/resources/previews/036/280/651/non_2x/default-avatar-profile-icon-social-media-user-image-gray-avatar-icon-blank-profile-silhouette-illustration-vector.jpg'} 
+                                src={user?.profile ?? 'https://static.vecteezy.com/system/resources/previews/036/280/651/non_2x/default-avatar-profile-icon-social-media-user-image-gray-avatar-icon-blank-profile-silhouette-illustration-vector.jpg'} 
                                 alt="Profile" 
                                 className="rounded-circle border border-primary shadow" 
                                 height="100"
