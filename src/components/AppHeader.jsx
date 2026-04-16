@@ -59,37 +59,7 @@ function AppHeader({ isChat }) {
     navigate(`/post-ad`)
   }
 
-  console.log('unsavedads', unsavedAds)
-
-  // const handleDiscard = () => {
-  //   setShowModal(false);
-  //   deleteAd(unsavedAd?.id)
-
-  // };
-  // useEffect(() => {
-  //   const fetchAd = async () => {
-  //     try {
-  //       const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/get_recent_unsaved_ad`, {
-  //         headers: {
-  //             'authorization': `Bearer ${token1}`,
-  //             'Content-Type': 'application/json'
-  //         }
-  //       });
-
-  //       setUnsavedAd(response.data);
-  //     } catch (error) {
-  //       //
-  //     }
-  //   };
-  //   if (token1){
-  //     fetchAd();
-  //   }
-  // }, [token1]);
-
   const handleLogout = () => {
-    // localStorage.removeItem('elk_authorization_token');
-    // localStorage.removeItem('elk_is_admin');
-    // localStorage.removeItem('elk_user_id');
     dispatch(clearUser())
     navigate('/home')
     // window.location.reload();
@@ -140,17 +110,6 @@ function AppHeader({ isChat }) {
           ) : (
             <></>
           )}
-          {/* <Form className="d-flex flex-grow-1 my-2 my-lg-0 mx-lg-3" onSubmit={(e) => { e.preventDefault(); navigate(`/search/${searchTerm}`); }}>
-            <Form.Control
-              type="search"
-              placeholder="Search ads..."
-              className="me-2"
-              aria-label="Search"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ borderRadius: '15px'}}
-            />
-          </Form> */}
           <Navbar.Toggle aria-controls="navbar-nav" />
           <Navbar.Collapse id="navbar-nav" style={{ zIndex: '1000' }}>
             {!isChat ? (

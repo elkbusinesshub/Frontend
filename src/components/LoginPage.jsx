@@ -49,21 +49,13 @@ const LoginPage = () => {
       const name = user.displayName;
       const email = user.email;
       const uuid = user.uid;
-      //   const response = await axios.post(
-      //     `${process.env.REACT_APP_API_BASE_URL}/api/create_user`,
-      //     {
-      //       name,
-      //       uuid,
-      //       email,
-      //     }
-      //   );
       const response = await createUser({
         name,
         uuid,
         email,
       });
-      //   localStorage.setItem("elk_authorization_token", response.data.data.token);
-      console.log("res..",response)
+
+      
 
       dispatch(
         setUser({
@@ -122,23 +114,15 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      //   const response = await axios.post(
-      //     `${process.env.REACT_APP_API_BASE_URL}/api/verify_otp`,
-      //     { verificationId: verificationId, otp: otp }
-      //   );
       const response = await verifyOtp({
         verificationId: verificationId,
         otp: otp,
       });
-      //   localStorage.setItem("elk_authorization_token", response.data.data.token);
-      // localStorage.setItem('elk_is_admin', response.data.data.is_admin);
-      // localStorage.setItem('elk_user_id', response.data.data.user_id);
       dispatch(
         setUser({
-          user: response.data.data,
-          token: response.data.data.token,
-          isAdmin: response.data.data.is_admin,
-          role: response.data.data.role
+          user: response.data,
+          token: response.data.token,
+          role: response.data.role
         })
       );
       navigate("/home");

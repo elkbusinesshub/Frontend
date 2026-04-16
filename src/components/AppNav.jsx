@@ -17,11 +17,12 @@ import logo from "../assets/logo3.png";
 import "./AppHeader.css";
 
 function AppHeader({ isChat }) {
-  const { user, role } = useSelector((state) => state.auth);
+  const { user, role, token } = useSelector((state) => state.auth);
+  console.log(user, role, token)
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const token = localStorage.getItem("elk_authorization_token");
+  // const token = localStorage.getItem("elk_authorization_token");
 
   const [expanded, setExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
