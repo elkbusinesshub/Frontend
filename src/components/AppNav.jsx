@@ -118,6 +118,12 @@ function AppHeader({ isChat }) {
                     </Dropdown.Item>
                   )}
 
+                  {role === "superadmin" && (
+                    <Dropdown.Item onClick={() => navigate("/admin")}>
+                      Admin
+                    </Dropdown.Item>
+                  )}
+
                   <Dropdown.Divider />
                   <Dropdown.Item onClick={handleLogout}>
                     Logout
