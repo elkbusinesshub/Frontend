@@ -9,7 +9,7 @@ import {
   useGetAdbyIdQuery,
   useUpdateAdMutation,
 } from "../../store/services/superadmin.service";
-
+import { successMessageToast } from "../common/hooks/common";
 function SuperAdminEditAd() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -86,16 +86,14 @@ function SuperAdminEditAd() {
       newImages.forEach((file) => formData.append("ad_images", file));
 
       await updateAd(formData).unwrap();
-      alert("Ad updated successfully");
+      successMessageToast("Ad updated successfully");
       navigate(-1);
     } catch (err) {
-      alert(err?.data?.message || "Update failed");
+      console.log(err?.data?.message || "Update failed");
     }
   };
 
   if (dataLoading || !ad ) return <Loader />;
-
-  console.log("aadddd", ad)
 
   return (
     <>

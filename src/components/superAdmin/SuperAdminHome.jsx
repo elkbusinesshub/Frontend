@@ -16,6 +16,7 @@ import {
   useGetAdsListQuery,
   useDeleteAdMutation,
 } from "../../store/services/superadmin.service";
+import { successMessageToast } from "../common/hooks/common";
 
 const LIMIT = 10;
 
@@ -62,9 +63,9 @@ function SuperAdminHome() {
     if (!confirmed) return;
     try {
       await deleteAdMutation(id).unwrap();
-      alert("Ad deleted successfully!");
+      successMessageToast("Ad deleted successfully!");
     } catch (error) {
-      alert(error?.data?.message || "Failed to delete ad.");
+      console.log(error?.data?.message || "Failed to delete ad.");
     }
   };
 

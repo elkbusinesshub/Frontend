@@ -75,7 +75,7 @@ export default function AdTabs() {
         setShowImageUploadModal(true);
     } catch (error) {
         console.error('Error submitting form:', error.response?.data || error.message);
-        alert('Failed to save Post. Please try again.');
+        // alert('Failed to save Post. Please try again.');
     }
   };
 

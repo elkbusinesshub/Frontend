@@ -13,6 +13,7 @@ import {
   useBlockUserMutation,
   useGetSalesUsersListQuery,
 } from "../../store/services/superadmin.service";
+import { successMessageToast } from "../common/hooks/common";
 
 const LIMIT = 10;
 
@@ -53,9 +54,9 @@ function SuperAdminSalesUsers() {
     if (!confirmed) return;
     try {
       await blockUser(userId).unwrap();
-      alert("User block status updated successfully");
+      successMessageToast("User block status updated successfully");
     } catch (error) {
-      alert(error?.data?.message || "Server error");
+      console.log(error?.data?.message || "Server error");
     }
   };
 
@@ -113,7 +114,7 @@ function SuperAdminSalesUsers() {
           </div>
           <div style={{ display: "flex", gap: "10px" }}>
             <Button variant="success" onClick={downloadExcel}>Download Excel</Button>
-            <Button variant="success" onClick={() => navigate("/admin/accounts/create")}>Create User</Button>
+            {/* <Button variant="success" onClick={() => navigate("/admin/accounts/create")}>Create User</Button> */}
           </div>
         </div>
 

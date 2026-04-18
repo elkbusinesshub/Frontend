@@ -191,6 +191,22 @@ function AppHeader({ isChat }) {
                     <strong>Login</strong>
                   </Button>
                 )}
+
+                {(token &&role==="admin") && (
+                  <>
+                    <Button
+                      style={{
+                        all: 'unset',
+                        color: '#4FBBB4',
+                        margin: '0px 20px',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => navigate('/sales')}
+                    >
+                      <strong>Sales</strong>
+                    </Button>
+                  </>
+                )}
                 
               </Nav>
             ) : (

@@ -14,6 +14,7 @@ import {
   useBlockUserMutation,
   useMakeAdminMutation,
 } from "../../store/services/superadmin.service";
+import { successMessageToast } from "../common/hooks/common";
 
 const LIMIT = 10;
 
@@ -55,9 +56,9 @@ function SuperAdminAllUsers() {
     if (!confirm) return;
     try {
       await makeAdminMutation({ user_id: userId, role }).unwrap();
-      alert("User role changed successfully");
+      successMessageToast("User role changed successfully");
     } catch (error) {
-      alert(error?.data?.message || "Server error");
+      console.log(error?.data?.message || "Server error");
     }
   };
 
@@ -66,9 +67,9 @@ function SuperAdminAllUsers() {
     if (!confirm) return;
     try {
       await blockUser(userId).unwrap();
-      alert("User block status updated successfully");
+      successMessageToast("User block status updated successfully");
     } catch (error) {
-      alert(error?.data?.message || "Server error");
+      console.log(error?.data?.message || "Server error");
     }
   };
 
@@ -126,7 +127,7 @@ function SuperAdminAllUsers() {
           </div>
           <div style={{ display: "flex", gap: "10px" }}>
             <Button variant="success" onClick={downloadExcel}>Download Excel</Button>
-            <Button variant="success" onClick={() => navigate("/admin/accounts/create")}>Create User</Button>
+            {/* <Button variant="success" onClick={() => navigate("/admin/accounts/create")}>Create User</Button> */}
           </div>
         </div>
 

@@ -8,7 +8,8 @@ import './create.css'
 import Sidebar from './SideBar'
 import { useGetPlaceSearchQuery, useGetPlaceMutation } from '../../store/services/place.service'
 import { useCreateAdMutation } from '../../store/services/admin.service'
-import { successMessageToast } from '../common/hooks/common'
+import { errorMessageToast, successMessageToast } from '../common/hooks/common'
+import { useSelector } from 'react-redux'
 
 const categories = {
   rent: ['Cars', 'Properties', 'Electronics', 'Furnitures', 'Bikes', 'Clothes', 'Tools', 'Others'],
@@ -53,7 +54,10 @@ export default function AccountCreateMobile() {
   const navigate = useNavigate()
   const [locationLoading, setLocationLoading] = useState(false)
   const [query, setQuery] = useState('')
-  const [showLocationSearch, setShowLocationSearch] = useState(false)
+  const [showLocationSearch, setShowLocationSearch] = useState(false);
+  const { user } = useSelector((state) => state.auth);
+
+  const isManualLocationAllowed = user?.email === 'elkmarketingteam@gmail.com'
 
   const [getPlace] = useGetPlaceMutation()
   const [createAd] = useCreateAdMutation()
@@ -99,7 +103,7 @@ export default function AccountCreateMobile() {
         }
       },
       () => {
-        alert('Permission denied')
+        errorMessageToast('Permission denied')
         setLocationLoading(false)
       },
     )
@@ -181,6 +185,8 @@ export default function AccountCreateMobile() {
                       onFocus={() => setShowLocationSearch(true)}
                       onChange={handleLocationChange}
                       className="styled-input"
+                      disabled={!isManualLocationAllowed}
+                      readOnly={!isManualLocationAllowed}
                     />
                     <Button
                       type="button"
@@ -191,7 +197,7 @@ export default function AccountCreateMobile() {
                     </Button>
                   </div>
 
-                  {showLocationSearch && locations.length > 0 && (
+                  {isManualLocationAllowed && showLocationSearch && locations.length > 0 && (
                     <ul className="location-suggestions">
                       {locations.map((loc, i) => (
                         <li
