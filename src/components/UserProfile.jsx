@@ -141,10 +141,11 @@ import {
   useUserWithAdsQuery,
   useViewContactQuery,
 } from '../store/services/user.service';
+import { useSelector } from 'react-redux';
 
 const UserProfilePage = () => {
   const { id } = useParams();
-  const token = localStorage.getItem('elk_authorization_token');
+  const { token } = useSelector((state) => state.auth)
 
   const {
     data: userData,
@@ -153,15 +154,12 @@ const UserProfilePage = () => {
     skip: !token,
   });
 
-  console.log("userData", userData)
-
   const {
     data: contact,
     isLoading: contactLoading,
   } = useViewContactQuery({userId: id}, {
     skip: !token,
   });
-   console.log("contact", contact)
   const [selectedPost, setSelectedPost] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
