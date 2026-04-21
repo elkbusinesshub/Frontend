@@ -1,99 +1,100 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import SSidebar from "./SuperAdminSideBar";
-import AdminNav from "./SuperAdminNav";
-import Loader from "../Loader";
-import "../../styles/admin/EditAd.css";
-import { IoCloseCircleOutline } from "react-icons/io5";
+import { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import SSidebar from './SuperAdminSideBar'
+import AdminNav from './SuperAdminNav'
+import Loader from '../Loader'
+import '../../styles/admin/EditAd.css'
+import { IoCloseCircleOutline } from 'react-icons/io5'
 import {
   useGetAdbyIdQuery,
   useUpdateAdMutation,
-} from "../../store/services/superadmin.service";
-import { successMessageToast } from "../common/hooks/common";
+} from '../../store/services/superadmin.service'
+import { successMessageToast } from '../common/hooks/common'
 function SuperAdminEditAd() {
-  const { id } = useParams();
-  const navigate = useNavigate();
+  const { id } = useParams()
+  const navigate = useNavigate()
 
-  const [ad, setAd] = useState(null);
-  const [newImages, setNewImages] = useState([]);
+  const [ad, setAd] = useState(null)
+  const [newImages, setNewImages] = useState([])
+  const [deletedImageIds, setDeletedImageIds] = useState([])
 
-  const { data, isLoading: dataLoading } = useGetAdbyIdQuery(id);
-  const [updateAd, { isLoading: updating }] = useUpdateAdMutation();
-  console.log("updating",data)
+  const { data, isLoading: dataLoading } = useGetAdbyIdQuery(id)
+  const [updateAd, { isLoading: updating }] = useUpdateAdMutation()
 
   // Populate local state once data is fetched
   useEffect(() => {
-    if (!data) return;
+    if (!data) return
 
-    const adData = data;
+    const adData = data
     const convertedPrices =
       adData.ad_price_details?.map((price) => ({
         id: price.id,
-        category: "duration",
-        unit: price.rent_duration || "",
-        price: price.rent_price || "",
-      })) || [];
+        category: 'duration',
+        unit: price.rent_duration || '',
+        price: price.rent_price || '',
+      })) || []
 
-    setAd({ ...adData, ad_price_details: convertedPrices });
-  }, [data]);
+    setAd({ ...adData, ad_price_details: convertedPrices })
+  }, [data])
 
   // ── BASIC FIELD CHANGE ───────────────────────────────────────────
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setAd((prev) => ({ ...prev, [name]: value }));
-  };
+    const { name, value } = e.target
+    setAd((prev) => ({ ...prev, [name]: value }))
+  }
 
   // ── PRICE HANDLING ───────────────────────────────────────────────
   const handlePriceChange = (index, field, value) => {
     setAd((prev) => {
-      const updated = [...prev.ad_price_details];
-      updated[index] = { ...updated[index], [field]: value };
-      return { ...prev, ad_price_details: updated };
-    });
-  };
+      const updated = [...prev.ad_price_details]
+      updated[index] = { ...updated[index], [field]: value }
+      return { ...prev, ad_price_details: updated }
+    })
+  }
 
   const addNewPrice = () => {
     setAd((prev) => ({
       ...prev,
       ad_price_details: [
         ...prev.ad_price_details,
-        { category: "", unit: "", price: "" },
+        { category: '', unit: '', price: '' },
       ],
-    }));
-  };
+    }))
+  }
 
   const removePrice = (index) => {
     setAd((prev) => ({
       ...prev,
       ad_price_details: prev.ad_price_details.filter((_, i) => i !== index),
-    }));
-  };
+    }))
+  }
 
   // ── IMAGE HANDLING ───────────────────────────────────────────────
   const handleImageUpload = (e) => {
-    setNewImages((prev) => [...prev, ...Array.from(e.target.files)]);
-  };
+    setNewImages((prev) => [...prev, ...Array.from(e.target.files)])
+  }
 
   // ── SAVE ─────────────────────────────────────────────────────────
   const handleSave = async () => {
     try {
-      const formData = new FormData();
-      formData.append("id", ad.id);
-      formData.append("title", ad.title);
-      formData.append("description", ad.description);
-      formData.append("category", ad.category);
-      formData.append("ad_price_details", JSON.stringify(ad.ad_price_details));
-      newImages.forEach((file) => formData.append("ad_images", file));
+      const formData = new FormData()
+      formData.append('id', ad.id)
+      formData.append('title', ad.title)
+      formData.append('description', ad.description)
+      formData.append('category', ad.category)
+      formData.append('ad_price_details', JSON.stringify(ad.ad_price_details))
+      newImages.forEach((file) => formData.append('ad_images', file))
+      formData.append('deleted_image_ids', JSON.stringify(deletedImageIds))
 
-      await updateAd(formData).unwrap();
-      successMessageToast("Ad updated successfully");
-      navigate(-1);
+      await updateAd(formData).unwrap()
+      successMessageToast('Ad updated successfully')
+      navigate(-1)
     } catch (err) {
-      console.log(err?.data?.message || "Update failed");
+      console.log(err?.data?.message || 'Update failed')
     }
-  };
+  }
 
-  if (dataLoading || !ad ) return <Loader />;
+  if (dataLoading || !ad) return <Loader />
 
   return (
     <>
@@ -114,7 +115,7 @@ function SuperAdminEditAd() {
               <input
                 type="text"
                 name="title"
-                value={ad.title || ""}
+                value={ad.title || ''}
                 onChange={handleChange}
               />
             </div>
@@ -123,7 +124,7 @@ function SuperAdminEditAd() {
               <textarea
                 name="description"
                 rows="4"
-                value={ad.description || ""}
+                value={ad.description || ''}
                 onChange={handleChange}
               />
             </div>
@@ -135,8 +136,10 @@ function SuperAdminEditAd() {
           {ad.ad_price_details?.map((price, index) => (
             <div key={index} className="price-box">
               <select
-                value={price.category || ""}
-                onChange={(e) => handlePriceChange(index, "category", e.target.value)}
+                value={price.category || ''}
+                onChange={(e) =>
+                  handlePriceChange(index, 'category', e.target.value)
+                }
                 className="styled-input"
               >
                 <option value="">Select Category</option>
@@ -145,20 +148,24 @@ function SuperAdminEditAd() {
                 <option value="custom">Custom</option>
               </select>
 
-              {price.category === "custom" && (
+              {price.category === 'custom' && (
                 <input
                   type="text"
                   placeholder="Custom Unit"
-                  value={price.unit || ""}
-                  onChange={(e) => handlePriceChange(index, "unit", e.target.value)}
+                  value={price.unit || ''}
+                  onChange={(e) =>
+                    handlePriceChange(index, 'unit', e.target.value)
+                  }
                   className="styled-input"
                 />
               )}
 
-              {price.category === "size" && (
+              {price.category === 'size' && (
                 <select
-                  value={price.unit || ""}
-                  onChange={(e) => handlePriceChange(index, "unit", e.target.value)}
+                  value={price.unit || ''}
+                  onChange={(e) =>
+                    handlePriceChange(index, 'unit', e.target.value)
+                  }
                   className="styled-input"
                 >
                   <option value="">Select Unit</option>
@@ -167,10 +174,12 @@ function SuperAdminEditAd() {
                 </select>
               )}
 
-              {price.category === "duration" && (
+              {price.category === 'duration' && (
                 <select
-                  value={price.unit || ""}
-                  onChange={(e) => handlePriceChange(index, "unit", e.target.value)}
+                  value={price.unit || ''}
+                  onChange={(e) =>
+                    handlePriceChange(index, 'unit', e.target.value)
+                  }
                   className="styled-input"
                 >
                   <option value="">Select Unit</option>
@@ -184,15 +193,17 @@ function SuperAdminEditAd() {
               <input
                 type="number"
                 placeholder="Price"
-                value={price.price || ""}
-                onChange={(e) => handlePriceChange(index, "price", e.target.value)}
+                value={price.price || ''}
+                onChange={(e) =>
+                  handlePriceChange(index, 'price', e.target.value)
+                }
                 className="styled-input"
               />
 
               <IoCloseCircleOutline
                 size={48}
                 color="red"
-                style={{ cursor: "pointer", marginTop: "10px" }}
+                style={{ cursor: 'pointer', marginTop: '10px' }}
                 onClick={() => removePrice(index)}
               />
             </div>
@@ -202,19 +213,44 @@ function SuperAdminEditAd() {
             + Add Price
           </button>
 
-          {/* ── EXISTING IMAGES ── */}
-          <div className="section-title">Existing Images</div>
+           <div className="section-title">Existing Images</div>
           <div className="image-preview-grid">
-            {ad.ad_images?.map((img, index) => (
-              <div key={index} className="image-box">
-                <img src={img.image} alt="Ad" />
-              </div>
-            ))}
+            {ad.ad_images
+              ?.filter((img) => !deletedImageIds.includes(img.id))
+              .map((img, index) => (
+                <div
+                  key={index}
+                  className="image-box"
+                  style={{ position: 'relative', display: 'inline-block' }}
+                >
+                  <img src={img.image} alt="Ad" />
+                  <IoCloseCircleOutline
+                    size={28}
+                    color="red"
+                    style={{
+                      position: 'absolute',
+                      top: '4px',
+                      right: '4px',
+                      cursor: 'pointer',
+                      background: 'white',
+                      borderRadius: '50%',
+                    }}
+                    onClick={() =>
+                      setDeletedImageIds((prev) => [...prev, img.id])
+                    }
+                  />
+                </div>
+              ))}
           </div>
 
           {/* ── ADD NEW IMAGES ── */}
           <div className="section-title">Add More Images</div>
-          <input type="file" multiple accept="image/*" onChange={handleImageUpload} />
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleImageUpload}
+          />
           <div className="new-preview">
             {newImages.map((file, index) => (
               <img key={index} src={URL.createObjectURL(file)} alt="Preview" />
@@ -233,7 +269,7 @@ function SuperAdminEditAd() {
         </div>
       </div>
     </>
-  );
+  )
 }
 
-export default SuperAdminEditAd;
+export default SuperAdminEditAd
