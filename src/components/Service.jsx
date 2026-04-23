@@ -13,7 +13,6 @@ import laundry from "../assets/ic_laudery_service.png";
 import salon from "../assets/ic_saloon_service.png";
 import PostCard from "./PostCard";
 import PostModal from "./PostModal";
-// import { useCookies } from "react-cookie";
 import axios from "axios";
 import Loader from "./Loader";
 import EmptyState from "./EmptyAd";
@@ -22,8 +21,6 @@ import {
   useBestServiceProviderQuery,
 } from "../store/services/post.service";
 import "./Rental.css";
-
-
 
 const LIMIT = 10;
 
@@ -42,6 +39,28 @@ const Service = () => {
   const navigate = useNavigate();
   const { user, token } = useSelector((state) => state.auth);
 
+  // --- Location state (mirrors Rental.js) ---
+  const [location, setLocation] = useState(null);
+  const [locationReady, setLocationReady] = useState(!!token); // skip geo if logged in
+
+  React.useEffect(() => {
+    if (!token && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+          setLocationReady(true);
+        },
+        (error) => {
+          console.warn("Location access denied or unavailable", error);
+          setLocationReady(true); // proceed even without location
+        }
+      );
+    }
+  }, [token]);
+
   // --- Infinite scroll state ---
   const [offset, setOffset] = useState(0);
   const [allProviders, setAllProviders] = useState([]);
@@ -52,17 +71,26 @@ const Service = () => {
   const [selectedPost, setSelectedPost] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  // Best providers query with offset/limit
+  // Build base payload: user_id if logged in, lat/lng if guest, else empty
+  const basePayload = React.useMemo(() => {
+    if (token) return { user_id: user?.user_id };
+    if (location) return { latitude: location.latitude, longitude: location.longitude };
+    return {};
+  }, [token, user?.user_id, location]);
+
+  // Merge base payload with pagination
   const bestProvidersPayload = React.useMemo(
-    () =>
-      token
-        ? { user_id: user?.user_id, limit: LIMIT, offset }
-        : { limit: LIMIT, offset },
-    [token, user?.user_id, offset]
+    () => ({ ...basePayload, limit: LIMIT, offset }),
+    [basePayload, offset]
   );
 
-  const { data: bestProvidersData, isLoading: bestLoading, isFetching: bestFetching } =
-    useBestServiceProviderQuery(bestProvidersPayload);
+  const {
+    data: bestProvidersData,
+    isLoading: bestLoading,
+    isFetching: bestFetching,
+  } = useBestServiceProviderQuery(bestProvidersPayload, {
+    skip: !locationReady, // wait until we know location status
+  });
 
   // Accumulate best providers
   React.useEffect(() => {
@@ -97,12 +125,6 @@ const Service = () => {
     [bestFetching, hasMore]
   );
 
-  // Category horizontal scroll queries (unchanged)
-  const { data: cleaningData } = useRentCategoryPostQuery({ ad_type: "service", category: "cleaning" });
-  const { data: electricianData } = useRentCategoryPostQuery({ ad_type: "service", category: "electrician" });
-  const { data: carpentryData } = useRentCategoryPostQuery({ ad_type: "service", category: "carpentry" });
-  const { data: paintingData } = useRentCategoryPostQuery({ ad_type: "service", category: "painting" });
-
   const handleCardClick = (post) => {
     setSelectedPost(post);
     setShowModal(true);
@@ -115,7 +137,6 @@ const Service = () => {
         onCategoryClick={(c) => navigate(`/services/${c.title.toLowerCase()}`)}
       />
 
-      {/* ── Best Service Providers (infinite scroll grid) ── */}
       <h3 className="ml-5 mb-4">Best Service Providers</h3>
 
       {bestLoading && offset === 0 ? (
@@ -130,10 +151,8 @@ const Service = () => {
             ))}
           </div>
 
-          {/* Sentinel */}
           {hasMore && <div ref={sentinelRef} style={{ height: "1px" }} />}
 
-          {/* Loading spinner for page 2+ */}
           {bestFetching && offset > 0 && (
             <div style={{ textAlign: "center", padding: "1rem" }}>
               <Loader />
@@ -150,7 +169,6 @@ const Service = () => {
         !bestFetching && <EmptyState />
       )}
 
-
       <PostModal
         isMyAd={false}
         show={showModal}
@@ -160,6 +178,5 @@ const Service = () => {
     </div>
   );
 };
-
 
 export default Service;
