@@ -8,13 +8,13 @@ import Loader from "./Loader";
 import EmptyState from "./EmptyAd";
 import { useSelector } from "react-redux";
 import { useGetRentCategoryListQuery } from "../store/services/post.service";
+import { useGetPlaceMutation } from "../store/services/place.service";
 import "./Rental.css";
 
 const LIMIT = 10;
 
 const AdCategory = ({ category, type }) => {
   const { user } = useSelector((state) => state.auth);
-  const token = localStorage.getItem("elk_authorization_token");
 
   const [selectedPost, setSelectedPost] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -24,16 +24,110 @@ const AdCategory = ({ category, type }) => {
   const observerRef = useRef(null);
   const prevDataRef = useRef(null);
 
-  const queryPayload = {
-    ad_type: type,
-    category: category.title,
-    limit: LIMIT,
-    offset,
-  };
+  const [coords, setCoords] = useState({ latitude: null, longitude: null });
+  const [coordsReady, setCoordsReady] = useState(false);
+  const [locationReady, setLocationReady] = useState(false);
 
-  const { data: adList, isLoading, isFetching } = useGetRentCategoryListQuery(queryPayload);
+  const [location, setLocation] = useState({
+    latitude: null,
+    longitude: null,
+    location: null,
+    location_type: null,
+  });
 
-  // Accumulate posts as offset changes
+  const [getPlace] = useGetPlaceMutation();
+
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setCoordsReady(true);
+      setLocationReady(true); 
+    }, 5000);
+
+    if (!navigator.geolocation) {
+      setCoordsReady(true);
+      setLocationReady(true);
+      clearTimeout(timeout);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setCoords({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        setCoordsReady(true);
+        clearTimeout(timeout);
+      },
+      () => {
+        setCoordsReady(true);
+        setLocationReady(true); 
+        clearTimeout(timeout);
+      }
+    );
+
+    return () => clearTimeout(timeout);
+  }, []);
+
+ 
+  useEffect(() => {
+    if (!coordsReady || !coords.latitude || !coords.longitude) return;
+
+    const fetchPlace = async () => {
+      try {
+        const res = await getPlace({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+        }).unwrap();
+
+        setLocation({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          location:  res?.state || res?.country || null,
+          location_type: res?.type || null,
+        });
+      } catch {
+        setLocation({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          location: null,
+          location_type: null,
+        });
+      } finally {
+        setLocationReady(true);
+      }
+    };
+
+    fetchPlace();
+  }, [coordsReady]); 
+
+  const queryPayload = locationReady
+    ? {
+        ad_type: type,
+        category: category.title,
+        limit: LIMIT,
+        offset,
+        ...(user?.user_id
+          ? { user_id: user.user_id }        
+          : location.latitude
+          ? {                                
+              latitude: location.latitude,
+              longitude: location.longitude,
+              location: location.location,
+              location_type: location.location_type,
+            }
+          : {}),                        
+      }
+    : null;
+
+  const {
+    data: adList,
+    isLoading,
+    isFetching,
+  } = useGetRentCategoryListQuery(queryPayload, { skip: !queryPayload });
+
+ 
   useEffect(() => {
     if (!adList) return;
     if (prevDataRef.current === adList) return;
@@ -49,9 +143,9 @@ const AdCategory = ({ category, type }) => {
     });
 
     setHasMore(offset + LIMIT < totalCount);
-  }, [adList]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [adList]); 
 
-  // Intersection Observer sentinel
+
   const sentinelRef = useCallback(
     (node) => {
       if (isFetching) return;
@@ -79,7 +173,9 @@ const AdCategory = ({ category, type }) => {
           {category.title}
         </h1>
 
-        {isLoading && offset === 0 ? (
+        {!locationReady ? (
+          <Loader />
+        ) : isLoading && offset === 0 ? (
           <Loader />
         ) : allAds.length > 0 ? (
           <>
@@ -94,17 +190,14 @@ const AdCategory = ({ category, type }) => {
               ))}
             </div>
 
-            {/* Sentinel — triggers next fetch */}
             {hasMore && <div ref={sentinelRef} style={{ height: "1px" }} />}
 
-            {/* Spinner for subsequent loads */}
             {isFetching && offset > 0 && (
               <div style={{ textAlign: "center", padding: "1rem" }}>
                 <Loader />
               </div>
             )}
 
-            {/* End of results */}
             {!hasMore && (
               <p style={{ textAlign: "center", color: "#888", padding: "1.5rem 0" }}>
                 You've seen all ads!
