@@ -120,20 +120,19 @@ const ChatScreen = () => {
     }
   }, [messagesData?.chatMessages])
 
-
   useEffect(() => {
-  if (!selectedOtherUser) return;
+    if (!selectedOtherUser) return
 
-  const handleNewMessage = () => {
-    refetch(); // ✅ refetch whenever any new message comes in
-  };
+    const handleNewMessage = () => {
+      refetch() // ✅ refetch whenever any new message comes in
+    }
 
-  socket.on("newMessage", handleNewMessage);
+    socket.on('newMessage', handleNewMessage)
 
-  return () => {
-    socket.off("newMessage", handleNewMessage);
-  };
-}, [selectedOtherUser, refetch]);
+    return () => {
+      socket.off('newMessage', handleNewMessage)
+    }
+  }, [selectedOtherUser, refetch])
 
   const sendMessage = () => {
     if (input.trim() && selectedOtherUser) {
@@ -301,6 +300,9 @@ const ChatScreen = () => {
                               alignSelf: isSentByUser
                                 ? 'flex-end'
                                 : 'flex-start',
+                              wordBreak: 'break-word',
+                              overflowWrap: 'break-word',
+                              minWidth: 0,
                             }}
                           >
                             {msg.ad_id && (
@@ -327,6 +329,9 @@ const ChatScreen = () => {
                                 style={{
                                   display: 'flex',
                                   alignItems: 'flex-end',
+                                  wordBreak: 'break-word', // ← add this
+                                  overflowWrap: 'break-word', // ← add this
+                                  whiteSpace: 'pre-wrap',
                                 }}
                               >
                                 {msg.message}

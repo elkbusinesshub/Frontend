@@ -8,7 +8,7 @@ export const superadminApi = createApi({
   }),
   endpoints: (builder) => ({
     getUsersList: builder.query({
-      query: ({limit, offset}) => ({
+      query: ({ limit, offset }) => ({
         url: `/get-users?limit=${limit}&offset=${offset}`,
         method: 'GET',
       }),
@@ -23,16 +23,16 @@ export const superadminApi = createApi({
       transformResponse: (res) => res?.data,
       providesTags: ['AdDetail'],
     }),
-     updateAd: builder.mutation({
+    updateAd: builder.mutation({
       query: (payload) => ({
         url: '/update-ad',
         method: 'PUT',
-        data :payload,
+        data: payload,
       }),
       transformResponse: (res) => res?.data,
       invalidatesTags: ['AdDetail'],
     }),
-    
+
     blockUser: builder.mutation({
       query: (id) => ({
         url: '/block_user',
@@ -72,7 +72,7 @@ export const superadminApi = createApi({
       invalidatesTags: ['UserList'],
     }),
     getSalesUsersList: builder.query({
-      query: ({limit, offset}) => ({
+      query: ({ limit, offset }) => ({
         url: `/get-sales-users?limit=${limit}&offset=${offset}`,
         method: 'GET',
       }),
@@ -94,6 +94,22 @@ export const superadminApi = createApi({
       }),
       transformResponse: (res) => res?.data,
     }),
+    checkPhone: builder.query({
+      query: (phone_number) => ({
+        url: `/check-phone?phone_number=${phone_number}`,
+        method: 'GET',
+      }),
+      transformResponse: (res) => res?.data,
+    }),
+
+    addPhone: builder.mutation({
+      query: (payload) => ({
+        url: '/add-phone',
+        method: 'POST',
+        data: payload,
+      }),
+      transformResponse: (res) => res?.data,
+    }),
   }),
 })
 
@@ -108,5 +124,7 @@ export const {
   useMakeAdminMutation,
   useGetSalesUsersListQuery,
   useGetSalesAdsListQuery,
-  useGetSalesUsersByIdQuery
+  useGetSalesUsersByIdQuery,
+  useCheckPhoneQuery,
+  useAddPhoneMutation
 } = superadminApi

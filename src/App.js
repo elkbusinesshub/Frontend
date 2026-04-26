@@ -47,6 +47,7 @@ import AdminHome from './components/admin2/AdminHome';
 import SuperAdminSalesUsers from './components/superAdmin/SuperAdminSalesUsers';
 import SuperAdminSalesUserView from './components/superAdmin/SuperAdminSalesUserView';
 import SuperAdminEditAd from './components/superAdmin/SuperAdminEditAd';
+import SuperAdminPhoneCheck from './components/superAdmin/SuperAdminPhoneCheck';
 
 function App() {
     const dispatch = useDispatch();
@@ -109,6 +110,7 @@ function App() {
                 <Route path="/admin/sales-users" element={<SuperAdminRoute><SuperAdminSalesUsers /></SuperAdminRoute>} />
                 <Route path="/admin/sales-user/:id" element={<SuperAdminSalesUserView />} />
                 <Route path="/admin/edit-ad/:id" element={<SuperAdminEditAd />} />
+                <Route path="/admin/phone-check"   element={<SuperAdminRoute><SuperAdminPhoneCheck /></SuperAdminRoute>} />
 
                 <Route path="/sales" element={<AdminRoute><AdminAllUsers /></AdminRoute>} />
                 <Route path="/sales/create" element={<AdminRoute><AccountCreate /></AdminRoute>} />
