@@ -1,8 +1,5 @@
-
-import { Carousel } from 'react-bootstrap';
-import { Link } from "react-router-dom";
-
-
+import { Carousel } from 'react-bootstrap'
+import { Link } from 'react-router-dom'
 
 const PostCard = ({ post, onClick, isMyAd }) => {
   return (
@@ -55,18 +52,20 @@ const PostCard = ({ post, onClick, isMyAd }) => {
               <i className="fa-solid fa-location-dot me-1"></i>
               {`${post.ad_location.locality ? post.ad_location.locality + ',' : ''} ${post.ad_location.place ? post.ad_location.place + ',' : ''} ${post.ad_location.district ? post.ad_location.district + ',' : ''} ${post.ad_location.state ? post.ad_location.state + ',' : ''} ${post.ad_location.country ? post.ad_location.country : ''}`}
             </span> */}
-            <span className="card-text text-truncate">
-              <i className="fa-solid fa-location-dot me-1"></i>
-              {[
-                post.ad_location.locality,
-                post.ad_location.place,
-                post.ad_location.district,
-                post.ad_location.state,
-                post.ad_location.country,
-              ]
-                .filter(Boolean) // ✅ removes empty strings, null, undefined
-                .join(', ')}
-            </span>
+            
+              <span className="card-text text-truncate">
+                <i className="fa-solid fa-location-dot me-1"></i>
+                {[
+                  post.ad_location?.locality,
+                  post.ad_location?.place,
+                  post.ad_location?.district,
+                  post.ad_location?.state,
+                  post.ad_location?.country,
+                ]
+                  .filter(Boolean)
+                  .join(', ')}
+              </span>
+          
           </div>
         </div>
       </div>

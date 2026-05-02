@@ -270,17 +270,17 @@ const PostModal = ({ show, onHide, post, isMyAd, onAdDeleted }) => {
             )}
           </p>
           <p>
-              <i className="fa-solid fa-location-dot me-1"></i>
-              {[
-                post.ad_location.locality,
-                post.ad_location.place,
-                post.ad_location.district,
-                post.ad_location.state,
-                post.ad_location.country,
-              ]
-                .filter(Boolean) 
-                .join(', ')}
-            </p>
+            <i className="fa-solid fa-location-dot me-1"></i>
+            {[
+              adDetails.ad_location?.locality,
+              adDetails.ad_location?.place,
+              adDetails.ad_location?.district,
+              adDetails.ad_location?.state,
+              adDetails.ad_location?.country,
+            ]
+              .filter(Boolean)
+              .join(', ')}
+          </p>
         </div>
         <div className="d-flex flex-row justify-content-between align-items-center mt-4 flex-wrap">
           {!isMyAd ? (
