@@ -1,5 +1,6 @@
 import { Carousel } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
+import ImagePlaceholder from './ImagePlaceholder'
 
 const PostCard = ({ post, onClick, isMyAd }) => {
   return (
@@ -16,7 +17,7 @@ const PostCard = ({ post, onClick, isMyAd }) => {
         onClick={() => onClick(post)}
         style={{ borderRadius: '10px', maxWidth: '250px' }}
       >
-        {post.ad_images && post.ad_images.length > 0 && (
+        {post.ad_images && post.ad_images.length > 0 ? (
           <Carousel interval={3000} indicators={false} controls={true}>
             {post.ad_images.map((imgObj, index) => (
               <Carousel.Item key={index}>
@@ -34,7 +35,7 @@ const PostCard = ({ post, onClick, isMyAd }) => {
               </Carousel.Item>
             ))}
           </Carousel>
-        )}
+        ): <ImagePlaceholder title={post.title}/>}
         <div className="card-body p-2 d-flex flex-column">
           <h6 className="card-title post-title">{post.title}</h6>
 

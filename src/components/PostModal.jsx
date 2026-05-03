@@ -18,6 +18,7 @@ import {
   useGetAdDetailsQuery,
 } from '../store/services/post.service'
 import { useRemoveWishlistMutation } from '../store/services/user.service'
+import ImagePlaceholder from './ImagePlaceholder'
 
 const PostModal = ({ show, onHide, post, isMyAd, onAdDeleted }) => {
   const { user, isAuthenticated } = useSelector((state) => state.auth)
@@ -85,70 +86,10 @@ const PostModal = ({ show, onHide, post, isMyAd, onAdDeleted }) => {
     }
   }
 
-  // const getAdDetails = async (adId, token) => {
-  //   let body = {};
-  //   if (token) {
-  //     const userId = user?.user_id;
-  //     body = { ad_id: adId, user_id: userId };
-  //   } else {
-  //     body = { ad_id: adId };
-  //   }
-  //   try {
-  //     setLoading(true);
-  //     setError(false);
-  //     const response = await axios.post(
-  //       `${process.env.REACT_APP_API_BASE_URL}/api/get_ad_details`,
-  //       body,
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${token}`,
-  //           "Content-Type": "application/json",
-  //         },
-  //       }
-  //     );
-
-  //     setLoading(false);
-  //     return response.data;
-  //   } catch (error) {
-  //     setLoading(false);
-  //     setError(true);
-  //     console.error(
-  //       "Failed to fetch ad details:",
-  //       error.response?.data || error.message
-  //     );
-  //     return null;
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   if (!post?.ad_id) return;
-  //   const fetchAd = async () => {
-  //     try {
-  //       const data = await getAdDetails(post.ad_id, token);
-  //       if (data) setAdDetails(data);
-  //     } catch (err) {}
-  //   };
-  //   fetchAd();
-  // }, [post?.ad_id, token]);
-
   const toggleWishlist = async () => {
     if (!adDetails || !token) return
 
-    // const url = adDetails.wishListed
-    //   ? `${process.env.REACT_APP_API_BASE_URL}/api/remove_wishlist`
-    //   : `${process.env.REACT_APP_API_BASE_URL}/api/add_to_wishlist`;
-
     try {
-      // await axios.post(
-      //   url,
-      //   { ad_id: adDetails.id },
-      //   {
-      //     headers: {
-      //       Authorization: `Bearer ${token}`,
-      //       "Content-Type": "application/json",
-      //     },
-      //   }
-      // );
       let res
       if (adDetails.wishListed) {
         res = await removeWishlist({ ad_id: adDetails.id })
@@ -158,10 +99,6 @@ const PostModal = ({ show, onHide, post, isMyAd, onAdDeleted }) => {
       console.log('res..', res)
       refetch()
       successMessageToast(res?.message)
-      // setAdDetails((prev) => ({
-      //   ...prev,
-      //   wishListed: !prev.wishListed,
-      // }));
     } catch (error) {
       console.error(
         'Wishlist update error:',
@@ -211,7 +148,7 @@ const PostModal = ({ show, onHide, post, isMyAd, onAdDeleted }) => {
               </Carousel.Item>
             ))}
           </Carousel>
-        ) : (
+        ) : adDetails.ad_images && adDetails.ad_images.length === 1 ? (
           <img
             src={adDetails.ad_images[0]?.image}
             alt={adDetails.title}
@@ -225,6 +162,12 @@ const PostModal = ({ show, onHide, post, isMyAd, onAdDeleted }) => {
               setShowFullscreen(true)
               setFullscreenIndex(0)
             }}
+          />
+        ) : (
+          // ✅ Empty images array — show placeholder
+          <ImagePlaceholder
+            title={adDetails.title}
+            // style={{ maxHeight: '250px', borderRadius: '8px' }}
           />
         )}
         <FullscreenImageView

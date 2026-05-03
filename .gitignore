@@ -28,6 +28,8 @@ yarn-error.log*
 firebase.json
 .firebase
 .vscode
+debug.txt
+firebase-debug.log
 
 apphosting.yaml
 
