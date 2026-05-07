@@ -1,6 +1,6 @@
-import { configureStore } from "@reduxjs/toolkit";
-import authReducer from "./slices/authSlice"
-import storage from "redux-persist/lib/storage";
+import { configureStore } from '@reduxjs/toolkit'
+import authReducer from './slices/authSlice'
+import storage from 'redux-persist/lib/storage'
 import {
   persistReducer,
   persistStore,
@@ -10,31 +10,43 @@ import {
   PERSIST,
   PURGE,
   REGISTER,
-} from "redux-persist";
-import { adminApi } from "./services/admin.service";
-import { postApi } from "./services/post.service";
-import {placeApi} from "./services/place.service";
-import { userApi } from "./services/user.service";
-import { chatApi } from "./services/chat.service";
-import { superadminApi } from "./services/superadmin.service";
+} from 'redux-persist'
+import { adminApi } from './services/admin.service'
+import { postApi } from './services/post.service'
+import { placeApi } from './services/place.service'
+import { userApi } from './services/user.service'
+import { chatApi } from './services/chat.service'
+import { superadminApi } from './services/superadmin.service'
+import { combineReducers } from '@reduxjs/toolkit';
 
 const persistConfig = {
-  key: "auth",
+  key: 'auth',
   storage,
-};
+}
 
-const persistAuthReducer = persistReducer(persistConfig, authReducer);
+const persistAuthReducer = persistReducer(persistConfig, authReducer)
+// store.js
+
+
+const appReducer = combineReducers({
+  [adminApi.reducerPath]: adminApi.reducer,
+  [postApi.reducerPath]: postApi.reducer,
+  [placeApi.reducerPath]: placeApi.reducer,
+  [chatApi.reducerPath]: chatApi.reducer,
+  [userApi.reducerPath]: userApi.reducer,
+  [superadminApi.reducerPath]: superadminApi.reducer,
+  auth: persistAuthReducer,
+})
+
+const rootReducer = (state, action) => {
+  if (action.type === 'auth/clearUser') {
+    state = undefined // ← resets ALL reducers including RTK Query caches
+  }
+  return appReducer(state, action)
+}
 
 export const store = configureStore({
-  reducer: {
-    [adminApi.reducerPath]: adminApi.reducer,
-    [postApi.reducerPath]: postApi.reducer,
-    [placeApi.reducerPath]: placeApi.reducer,
-    [chatApi.reducerPath]: chatApi.reducer,
-    [userApi.reducerPath]: userApi.reducer,
-    [superadminApi.reducerPath]: superadminApi.reducer,
-    auth: persistAuthReducer,
-  },
+  reducer: rootReducer, // ← use rootReducer instead of inline object
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
@@ -46,8 +58,8 @@ export const store = configureStore({
       userApi.middleware,
       chatApi.middleware,
       placeApi.middleware,
-      superadminApi.middleware
+      superadminApi.middleware,
     ),
-});
+})
 
-export const persistor = persistStore(store);
+export const persistor = persistStore(store)

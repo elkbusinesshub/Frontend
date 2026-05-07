@@ -17,6 +17,7 @@ import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'
 import axios from 'axios'
 import { useDeleteAdMutation } from '../store/services/superadmin.service'
 import { useGetRecentUnsavedAdsQuery } from '../store/services/post.service'
+import { persistor } from '../store';
 // import { useSelector } from 'react-redux';
 
 function AppHeader({ isChat }) {
@@ -59,8 +60,9 @@ function AppHeader({ isChat }) {
     navigate(`/post-ad`)
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     dispatch(clearUser())
+    await persistor.purge()
     navigate('/home')
     // window.location.reload();
   }

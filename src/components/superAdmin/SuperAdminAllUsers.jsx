@@ -14,9 +14,10 @@ import {
   useBlockUserMutation,
   useMakeAdminMutation,
 } from "../../store/services/superadmin.service";
-import { successMessageToast } from "../common/hooks/common";
-
+import { successMessageToast, useDebounce } from "../common/hooks/common";
 const LIMIT = 10;
+
+
 
 function SuperAdminAllUsers() {
   const [selectedDate, setSelectedDate] = useState("");
@@ -24,11 +25,13 @@ function SuperAdminAllUsers() {
   const [offset, setOffset] = useState(0);
   const navigate = useNavigate();
 
+  const debouncedSearch = useDebounce(searchTerm, 500)
+
   const { data: usersData, isLoading } = useGetUsersListQuery({
     limit: LIMIT,
     offset,
-    // date: selectedDate,
-    // search: searchTerm,
+    date: selectedDate,
+    search: debouncedSearch,
   });
   const [blockUser] = useBlockUserMutation();
   const [makeAdminMutation] = useMakeAdminMutation();
@@ -44,7 +47,7 @@ function SuperAdminAllUsers() {
   };
 
   const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
+    setSearchTerm(e.target.value); 
     setOffset(0);
   };
 

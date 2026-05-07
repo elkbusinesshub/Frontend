@@ -15,6 +15,7 @@ import ChatIcon from "@mui/icons-material/Chat";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import logo from "../assets/logo3.png";
 import "./AppHeader.css";
+import { persistor } from "../store";
 
 function AppHeader({ isChat }) {
   const { user, role, token } = useSelector((state) => state.auth);
@@ -27,9 +28,10 @@ function AppHeader({ isChat }) {
   const [expanded, setExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const handleLogout = () => {
-    localStorage.removeItem("elk_authorization_token");
+  const handleLogout = async () => {
+    // localStorage.removeItem("elk_authorization_token");
     dispatch(clearUser());
+    await persistor.purge()
     navigate("/home");
     window.location.reload();
   };

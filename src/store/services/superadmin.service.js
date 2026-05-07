@@ -7,11 +7,28 @@ export const superadminApi = createApi({
     baseUrl: '/super-admin',
   }),
   endpoints: (builder) => ({
+    // getUsersList: builder.query({
+    //   query: ({ limit, offset, date, search }) => ({
+    //     url: `/get-users?limit=${limit}&offset=${offset}&date=${date}&search=${search}`,
+    //     method: 'GET',
+    //   }),
+    //   transformResponse: (res) => res?.data,
+    //   providesTags: ['UserList'],
+    // }),
     getUsersList: builder.query({
-      query: ({ limit, offset }) => ({
-        url: `/get-users?limit=${limit}&offset=${offset}`,
-        method: 'GET',
-      }),
+      query: ({ limit, offset, date, search }) => {
+        const params = new URLSearchParams({
+          limit,
+          offset,
+          ...(date && { date }), 
+          ...(search && { search }),  
+        })
+
+        return {
+          url: `/get-users?${params.toString()}`,
+          method: 'GET',
+        }
+      },
       transformResponse: (res) => res?.data,
       providesTags: ['UserList'],
     }),
@@ -72,10 +89,23 @@ export const superadminApi = createApi({
       invalidatesTags: ['UserList'],
     }),
     getSalesUsersList: builder.query({
-      query: ({ limit, offset }) => ({
-        url: `/get-sales-users?limit=${limit}&offset=${offset}`,
-        method: 'GET',
-      }),
+      // query: ({ limit, offset, date, search }) => ({
+      //   url: `/get-sales-users?limit=${limit}&offset=${offset}`,
+      //   method: 'GET',
+      // }),
+      query: ({ limit, offset, date, search }) => {
+        const params = new URLSearchParams({
+          limit,
+          offset,
+          ...(date && { date }), 
+          ...(search && { search }),  
+        })
+
+        return {
+          url: `/get-sales-users?${params.toString()}`,
+          method: 'GET',
+        }
+      },
       transformResponse: (res) => res?.data,
       providesTags: ['SalesUserList'],
     }),

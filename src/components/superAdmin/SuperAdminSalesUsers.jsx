@@ -14,6 +14,7 @@ import {
   useGetSalesUsersListQuery,
 } from "../../store/services/superadmin.service";
 import { successMessageToast } from "../common/hooks/common";
+import { useDebounce } from "../common/hooks/common";
 
 const LIMIT = 10;
 
@@ -22,12 +23,13 @@ function SuperAdminSalesUsers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [offset, setOffset] = useState(0);
   const navigate = useNavigate();
+  const debouncedSearch = useDebounce(searchTerm, 500);
 
   const { data: usersData, isLoading } = useGetSalesUsersListQuery({
     limit: LIMIT,
     offset,
     date: selectedDate,
-    search: searchTerm,
+    search: debouncedSearch,
   });
   const [blockUser] = useBlockUserMutation();
 

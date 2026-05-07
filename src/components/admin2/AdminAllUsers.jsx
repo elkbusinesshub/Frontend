@@ -4,14 +4,17 @@ import { useState } from 'react'
 import Loader from '../Loader'
 import { useGetSalesUsersListQuery } from '../../store/services/admin.service'
 import dayjs from 'dayjs'
+import { useDebounce } from '../common/hooks/common'
 
 const LIMIT = 10
 
 function AdminAllUsers() {
   const [offset, setOffset] = useState(0)
+  const [searchTerm, setSearchTerm] = useState('')
+  const debouncedSearch = useDebounce(searchTerm, 500)
 
   const { data: userData, isLoading: userDataLoading } =
-    useGetSalesUsersListQuery({ limit: LIMIT, offset })
+    useGetSalesUsersListQuery({ limit: LIMIT, offset, search: debouncedSearch })
 
   const users = userData?.data ?? []
   const total = userData?.total ?? 0
@@ -20,13 +23,30 @@ function AdminAllUsers() {
 
   const handlePrev = () => setOffset((prev) => Math.max(prev - LIMIT, 0))
   const handleNext = () => setOffset((prev) => prev + LIMIT)
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value)
+    setOffset(0)
+  }
 
   return (
     <>
       <Sidebar />
       <div className="homeadmin">
         <div className="filters">
-          <h4>Total: {total}</h4>
+          <div className="fields">
+            <div className="label">Search:</div>
+            <div className="input">
+              <input
+                type="text"
+                placeholder="Search by Name"
+                value={searchTerm}
+                onChange={handleSearchChange}
+              />
+            </div>
+          </div>
+         <div style={{ marginLeft: "20px" }}>
+            <h4>Total: {total}</h4>
+          </div>
         </div>
 
         {userDataLoading ? (
@@ -92,7 +112,12 @@ function AdminAllUsers() {
                             {offset + index + 1}. {user.login_user.name}
                           </strong>
                         </div>
-                        <p><b>Date:</b> {dayjs(user.login_user.createdAt).format("MMM D, YYYY")}</p>
+                        <p>
+                          <b>Date:</b>{' '}
+                          {dayjs(user.login_user.createdAt).format(
+                            'MMM D, YYYY',
+                          )}
+                        </p>
                       </div>
                       {user.login_user.profile && (
                         <div className="user-card-image">
