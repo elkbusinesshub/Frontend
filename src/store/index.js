@@ -18,6 +18,7 @@ import { userApi } from './services/user.service'
 import { chatApi } from './services/chat.service'
 import { superadminApi } from './services/superadmin.service'
 import { combineReducers } from '@reduxjs/toolkit';
+import { commonApi } from './services/common.service'
 
 const persistConfig = {
   key: 'auth',
@@ -35,6 +36,7 @@ const appReducer = combineReducers({
   [chatApi.reducerPath]: chatApi.reducer,
   [userApi.reducerPath]: userApi.reducer,
   [superadminApi.reducerPath]: superadminApi.reducer,
+  [commonApi.reducerPath]: commonApi.reducer,
   auth: persistAuthReducer,
 })
 
@@ -59,6 +61,7 @@ export const store = configureStore({
       chatApi.middleware,
       placeApi.middleware,
       superadminApi.middleware,
+      commonApi.middleware
     ),
 })
 
