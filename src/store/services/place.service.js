@@ -24,8 +24,17 @@ export const placeApi = createApi({
       }),
       transformResponse: (res) => res?.data,
     }),
+    getPlaceDetails: builder.query({
+      query: (payload) => ({
+        url: "/place_details",
+        method: "POST",
+        data: payload,
+      }),
+      transformResponse: (res) => res?.data,
+    }),
+
     
   }),
 });
 
-export const { useGetPlaceSearchQuery, useGetPlaceMutation } = placeApi;
+export const { useGetPlaceSearchQuery, useGetPlaceMutation, useGetPlaceDetailsQuery } = placeApi;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Formik, Form, Field, FieldArray, ErrorMessage } from 'formik'
 import * as Yup from 'yup'
 import { IoCloseCircleOutline } from 'react-icons/io5'
@@ -9,6 +9,7 @@ import Sidebar from './SideBar'
 import {
   useGetPlaceSearchQuery,
   useGetPlaceMutation,
+  useGetPlaceDetailsQuery
 } from '../../store/services/place.service'
 import { useCreateAdMutation } from '../../store/services/admin.service'
 import { errorMessageToast, successMessageToast } from '../common/hooks/common'
@@ -77,6 +78,9 @@ export default function AccountCreateMobile() {
   const [locationLoading, setLocationLoading] = useState(false)
   const [query, setQuery] = useState('')
   const [showLocationSearch, setShowLocationSearch] = useState(false)
+  const [selectedPlaceId, setSelectedPlaceId] = useState(null)
+  const [pendingSetFieldValue, setPendingSetFieldValue] = useState(null)
+
   const { user } = useSelector((state) => state.auth)
 
   const isManualLocationAllowed = user?.email === 'elkmarketingteam@gmail.com'
@@ -88,7 +92,23 @@ export default function AccountCreateMobile() {
   const { data: locations = [] } = useGetPlaceSearchQuery(
     { query, limited: false },
     { skip: !query },
-  )
+  );
+
+  const { data: placeDetails, isLoading: placeDetailsLoading } = useGetPlaceDetailsQuery(
+    { placeId: selectedPlaceId },
+    { skip: !selectedPlaceId },
+  );
+
+  // When place details load, push into Formik
+  useEffect(() => {
+    if (placeDetails && pendingSetFieldValue) {
+      pendingSetFieldValue('location', { ...placeDetails })
+      setQuery(placeDetails.name || placeDetails.place || '')
+      setShowLocationSearch(false)
+      setPendingSetFieldValue(null)
+      setSelectedPlaceId(null)
+    }
+  }, [placeDetails]);
 
   const initialValues = {
     name: '',
@@ -100,12 +120,14 @@ export default function AccountCreateMobile() {
   const handleLocationChange = (e) => {
     setQuery(e.target.value)
     setShowLocationSearch(true)
+    setSelectedPlaceId(null)
   }
 
   const handleSelectLocation = (loc, setFieldValue) => {
-    setFieldValue('location', loc)
     setQuery(loc.name)
     setShowLocationSearch(false)
+    setSelectedPlaceId(loc.placeId)              
+    setPendingSetFieldValue(() => setFieldValue) 
   }
 
   const handleUseCurrentLocation = (setFieldValue) => {
@@ -118,7 +140,7 @@ export default function AccountCreateMobile() {
           const { latitude, longitude } = position.coords
           const res = await getPlace({ latitude, longitude })
           setFieldValue('location', res.data)
-          setQuery(res.data?.place || '') // show in input box too
+          setQuery(res.data?.name || res?.data?.place || '') // show in input box too
         } catch (err) {
           alert('Location fetch failed')
         } finally {
@@ -277,7 +299,7 @@ export default function AccountCreateMobile() {
                               handleSelectLocation(loc, setFieldValue)
                             }
                           >
-                            <strong>{loc.name}</strong>
+                            <strong>{loc.mainText}</strong>
                           </li>
                         ))}
                       </ul>
