@@ -194,7 +194,7 @@ function AppHeader({ isChat }) {
                   </Button>
                 )}
 
-                {(token &&role==="admin") && (
+                {/* {(token &&role==="admin") && (
                   <>
                     <Button
                       style={{
@@ -208,7 +208,7 @@ function AppHeader({ isChat }) {
                       <strong>Sales</strong>
                     </Button>
                   </>
-                )}
+                )} */}
                 
               </Nav>
             ) : (
