@@ -87,7 +87,7 @@ const PostModal = ({ show, onHide, post, isMyAd, onAdDeleted }) => {
   }
 
   const toggleWishlist = async () => {
-    if (!adDetails || !token) return
+    if (!adDetails) return
 
     try {
       let res
@@ -96,7 +96,6 @@ const PostModal = ({ show, onHide, post, isMyAd, onAdDeleted }) => {
       } else {
         res = await addWishlist({ ad_id: adDetails.id })
       }
-      console.log('res..', res)
       refetch()
       successMessageToast(res?.message)
     } catch (error) {

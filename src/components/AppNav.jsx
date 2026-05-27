@@ -19,7 +19,6 @@ import { persistor } from "../store";
 
 function AppHeader({ isChat }) {
   const { user, role, token } = useSelector((state) => state.auth);
-  console.log(user, role, token)
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
