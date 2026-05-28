@@ -84,7 +84,7 @@ function AdminHome() {
                         <td>{ad.ad_type}</td>
                         <td>
                           {ad.ad_location
-                            ? `${ad.ad_location.place ? ad.ad_location.place + ', ' : ''}${ad.ad_location.state ?? ''}`
+                            ? `${ad.ad_location.locality ? ad.ad_location.locality + ', ' : ''}${ad.ad_location.state ?? ''}`
                             : 'N/A'}
                         </td>
                         <td>

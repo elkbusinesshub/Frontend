@@ -103,7 +103,12 @@ export default function AccountCreateMobile() {
   useEffect(() => {
     if (placeDetails && pendingSetFieldValue) {
       pendingSetFieldValue('location', { ...placeDetails })
-      setQuery(placeDetails.name || placeDetails.place || '')
+      setQuery(
+      placeDetails.locality ||  
+      placeDetails.place ||
+      placeDetails.name ||
+      ''
+    )
       setShowLocationSearch(false)
       setPendingSetFieldValue(null)
       setSelectedPlaceId(null)
@@ -140,7 +145,7 @@ export default function AccountCreateMobile() {
           const { latitude, longitude } = position.coords
           const res = await getPlace({ latitude, longitude })
           setFieldValue('location', res.data)
-          setQuery(res.data?.name || res?.data?.place || '') // show in input box too
+          setQuery(res.data?.locality || res?.data?.place || '') // show in input box too
         } catch (err) {
           alert('Location fetch failed')
         } finally {
@@ -154,39 +159,6 @@ export default function AccountCreateMobile() {
     )
   }
 
-  // const onSubmit = async (values, { setSubmitting }) => {
-  //   try {
-  //     const formData = new FormData()
-  //     formData.append('name', values.name)
-  //     formData.append('phone', values.phone)
-  //     formData.append('location', JSON.stringify(values.location))
-
-  //     const adsPayload = values.ads.map((ad, adIndex) => {
-  //       ad.images?.forEach((file) => {
-  //         formData.append(`ads[${adIndex}][images]`, file)
-  //       })
-  //       return {
-  //         type: ad.type,
-  //         category: ad.category,
-  //         title: ad.title,
-  //         description: ad.description,
-  //         prices: Array.isArray(ad.prices) ? ad.prices : [],
-  //       }
-  //     })
-
-  //     formData.append('ads', JSON.stringify(adsPayload))
-
-  //     const res = await createAd(formData)
-  //     if (res?.data?.success) {
-  //       successMessageToast(res.data.message ?? 'Submitted successfully')
-  //       navigate('/sales')
-  //     }
-  //   } catch (err) {
-  //     console.log('Submit failed: ' + err)
-  //   } finally {
-  //     setSubmitting(false)
-  //   }
-  // }
 
   const onSubmit = async (values, { setSubmitting }) => {
     try {
